@@ -1,8 +1,9 @@
-package player_proof_of_concept;
+package dumb_robots;
 
 import battlecode.common.*;
 
 import java.util.ArrayList;
+import java.util.Map;
 import java.util.Random;
 
 /**
@@ -50,17 +51,28 @@ public strictfp class RobotPlayer {
     public static void run(RobotController rc) throws GameActionException {
 
         System.out.println("I'm a " + rc.getType() + " and I just got created! I have health " + rc.getHealth());
+        boolean waypointFlag = false;
 
         while (true) {
             turnCount += 1;  // We have now been alive for one more turn!
             System.out.println("Age: " + turnCount + "; Location: " + rc.getLocation());
 
+            // Reset waypoint every 150 turns, will set to 0 at start
+            if (rc.getRoundNum() % 150 == 0) { rc.writeSharedArray(0, 0); }
+
+            // Once we get to the waypoint, clear it
+            int waypointCode = rc.readSharedArray(0);
+            if (rc.getLocation().equals(new MapLocation(waypointCode/100, waypointCode - waypointCode/100))) {
+                rc.writeSharedArray(0, 0);
+                waypointFlag = true;
+            }
+
             // Try/catch blocks stop unhandled exceptions, which cause your robot to explode.
             try { // Called for all robots
                 switch (rc.getType()) {
-                    case ARCHON:     runArchon(rc);  break;
-                    case MINER:      runMiner(rc);   break;
-                    case SOLDIER:    runSoldier(rc); break;
+                    case ARCHON:     runArchon(rc, waypointFlag);  break;
+                    case MINER:      runMiner(rc, waypointFlag);   break;
+                    case SOLDIER:    runSoldier(rc, waypointFlag); break;
                     case LABORATORY: // Examplefuncsplayer doesn't use any of these robot types below.
                     case WATCHTOWER: // You might want to give them a try!
                     case BUILDER:
@@ -80,11 +92,12 @@ public strictfp class RobotPlayer {
     }
 
     // Run a single turn for an Archon.
-    static void runArchon(RobotController rc) throws GameActionException {
+    static void runArchon(RobotController rc, boolean waypointFlag) throws GameActionException {
         // Spawn miners in random directions
         Direction spawnDir = directions[rng.nextInt(directions.length)];
+        int currWaypoint = rc.readSharedArray(0);
 
-        if (rng.nextBoolean() || rc.getRoundNum() < 250) {
+        if ((rng.nextBoolean() || rc.getRoundNum() < 250) && (currWaypoint == 0 && !waypointFlag)) {
             rc.setIndicatorString("Trying to build a miner");
             if (rc.canBuildRobot(RobotType.MINER, spawnDir)) {
                 rc.buildRobot(RobotType.MINER, spawnDir);
@@ -98,12 +111,12 @@ public strictfp class RobotPlayer {
     }
 
     // Run a single turn for a Miner.
-    static void runMiner(RobotController rc) throws GameActionException {
+    static void runMiner(RobotController rc, boolean waypointFlag) throws GameActionException {
         MapLocation myLoc = rc.getLocation();
+        int currWaypoint = rc.readSharedArray(0);
+
         // Check if can mine within vision radius
         MapLocation[] visibleLocs = rc.getAllLocationsWithinRadiusSquared(myLoc, RobotType.MINER.visionRadiusSquared);
-
-        // Create a list of all nearby locations with Pb
         ArrayList<MapLocation> nearbyPbLocs = new ArrayList<MapLocation>();
         MapLocation nearestPb = null;
         double nearestPbDistanceSq = Double.POSITIVE_INFINITY;
@@ -117,9 +130,14 @@ public strictfp class RobotPlayer {
             }
         }
 
-        if (nearestPb != null)  { // Dumb path finding to nearest lead
+        if (nearestPb != null)  { // Dumb path finding to nearest Pb
             Direction dirToClosestPb = myLoc.directionTo(nearestPb);
             if (rc.canMove(dirToClosestPb)) { rc.move(dirToClosestPb); }
+        } else if (currWaypoint != 0 && !waypointFlag) { // Move to the waypoint direction
+            int waypointX = currWaypoint / 100;
+            int waypointY = currWaypoint - waypointX;
+            Direction dirToWaypoint  = myLoc.directionTo(new MapLocation(waypointX, waypointY));
+            if (rc.canMove(dirToWaypoint)) { rc.move(dirToWaypoint); }
         } else { // move randomly
             Direction dir = directions[rng.nextInt(directions.length)];
             if (rc.canMove(dir)) { rc.move(dir); }
@@ -132,68 +150,43 @@ public strictfp class RobotPlayer {
                 while (rc.canMineLead(mineLocation)) { rc.mineLead(mineLocation); }
             }
         }
-        // System.out.println("THE NEAREST LEAD IS " + nearestPbDistance + "AWAY!!!");
-    }
 
-    // Run a single turn for a Soldier.
-    static void runSoldier(RobotController rc) throws GameActionException {
-       MapLocation myLoc = rc.getLocation();
-
-        // General strategy: Just follow a particular friently miner
-        // NOTE: This takes a lot of bytecodes, so run it only when necessary
-        // TODO: Put it inside the conditional block that first moves to waypoints
-        RobotInfo[] nearbyRobots = rc.senseNearbyRobots();
-        MapLocation someMinerLoc = null;
-        for (RobotInfo robot : nearbyRobots) {
-            if (robot.getTeam() == rc.getTeam() && robot.getType() == RobotType.MINER) {
-                someMinerLoc = robot.getLocation();
-                break;
-            }
-        }
-
-        // Reset waypoint every 500 turns, will set to 0 at start
-        if (rc.getRoundNum() % 500 == 0) { rc.writeSharedArray(0, 0); }
-        int currWaypoint = rc.readSharedArray(0);
-
-        // Move to the waypoint direction
-        if (currWaypoint != 0) {
-            int waypointX = currWaypoint / 100;
-            int waypointY = currWaypoint - waypointX;
-            Direction dirToWaypoint  = myLoc.directionTo(new MapLocation(waypointX, waypointY));
-            if (rc.canMove(dirToWaypoint)) { rc.move(dirToWaypoint); }
-        }
-
-//        else if (myLoc.distanceSquaredTo(someMinerLoc) < 4) { // Arbitrarily set, move to miner's location
-//            Direction dirToMiner  = myLoc.directionTo(someMinerLoc);
-//            if (rc.canMove(dirToMiner)) {
-//                rc.move(dirToMiner);
-//            }
-//        }
-
-        else { // Move randomly
-            Direction dir = directions[rng.nextInt(directions.length)];
-            if (rc.canMove(dir)) { rc.move(dir); }
-        }
-
-        // Search and attack nearby enemiesint radius = rc.getType().actionRadiusSquared;
         int radius = rc.getType().actionRadiusSquared;
         Team opponent = rc.getTeam().opponent();
         RobotInfo[] enemies = rc.senseNearbyRobots(radius, opponent);
         if (enemies.length > 0) {
-            MapLocation toAttack = enemies[0].location;
-            if (rc.canAttack(toAttack)) {
-                rc.attack(toAttack);
-                if (rc.getRoundNum() < 1250) {
-                    String waypointCode = "" + toAttack.x + toAttack.y;
-                    rc.writeSharedArray(0, Integer.parseInt(waypointCode));
-                }
-            }
+            MapLocation enemyLoc = enemies[0].location;
+            int waypointCode = enemyLoc.x * 100 + enemyLoc.y;
+            rc.writeSharedArray(0, waypointCode);
         }
+    }
 
+    // Run a single turn for a Soldier.
+    static void runSoldier(RobotController rc, boolean waypointFlag) throws GameActionException {
+        MapLocation myLoc = rc.getLocation();
 
-        // Some other strategy: If one of our soldiers finds an enemy, write to the shared array an
-        // indicator of a waypoint to which all soldiers can go. Tell Archons to spawn more soldiers
-        // 0th element is waypoint index
-        // CODE: 1st 2 digits = waypoint x, last 2 digits = waypoint y
+        int currWaypoint = rc.readSharedArray(0);
+        int radius = rc.getType().actionRadiusSquared;
+        Team opponent = rc.getTeam().opponent();
+        RobotInfo[] enemies = rc.senseNearbyRobots(radius, opponent);
+        MapLocation toAttack = (enemies.length > 0) ? enemies[0].location : null;
+
+        if (currWaypoint != 0 && !waypointFlag) {
+            rc.setIndicatorString("Moving to waypoint");
+            int waypointX = currWaypoint / 100;
+            int waypointY = currWaypoint - waypointX;
+            Direction dirToWaypoint  = myLoc.directionTo(new MapLocation(waypointX, waypointY));
+            if (rc.canMove(dirToWaypoint)) { rc.move(dirToWaypoint); }
+        } else if (enemies.length == 0 || waypointFlag) {
+            rc.setIndicatorString("No enemies found! Moving randomly");
+            Direction dir = directions[rng.nextInt(directions.length)];
+            if (rc.canMove(dir)) { rc.move(dir); }
+        } else {
+            rc.setIndicatorString("Found an enemy! Marking a waypoint");
+            int waypointCode = toAttack.x * 100 + toAttack.y; // 1st 2 digits = waypoint x, last 2 digits = waypoint y
+            rc.writeSharedArray(0, waypointCode);
+       }
+
+        if (toAttack != null && rc.canAttack(toAttack)) { rc.attack(toAttack); }
     }
 }
