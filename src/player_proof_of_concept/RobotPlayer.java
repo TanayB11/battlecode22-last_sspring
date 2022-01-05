@@ -84,7 +84,7 @@ public strictfp class RobotPlayer {
         // Spawn miners in random directions
         Direction spawnDir = directions[rng.nextInt(directions.length)];
 
-        if (rng.nextBoolean()) {
+        if (rng.nextBoolean() || rc.getRoundNum() < 250) {
             rc.setIndicatorString("Trying to build a miner");
             if (rc.canBuildRobot(RobotType.MINER, spawnDir)) {
                 rc.buildRobot(RobotType.MINER, spawnDir);
@@ -140,6 +140,8 @@ public strictfp class RobotPlayer {
        MapLocation myLoc = rc.getLocation();
 
         // General strategy: Just follow a particular friently miner
+        // NOTE: This takes a lot of bytecodes, so run it only when necessary
+        // TODO: Put it inside the conditional block that first moves to waypoints
         RobotInfo[] nearbyRobots = rc.senseNearbyRobots();
         MapLocation someMinerLoc = null;
         for (RobotInfo robot : nearbyRobots) {
@@ -149,13 +151,26 @@ public strictfp class RobotPlayer {
             }
         }
 
-        // Move to the miner's direction
-        if (myLoc.distanceSquaredTo(someMinerLoc) < 4) { // Arbitrarily set
-            Direction dirToMiner  = myLoc.directionTo(someMinerLoc);
-            if (rc.canMove(dirToMiner)) {
-                rc.move(dirToMiner);
-            }
-        } else { // Move randomly
+        // Reset waypoint every 500 turns, will set to 0 at start
+        if (rc.getRoundNum() % 500 == 0) { rc.writeSharedArray(0, 0); }
+        int currWaypoint = rc.readSharedArray(0);
+
+        // Move to the waypoint direction
+        if (currWaypoint != 0) {
+            int waypointX = currWaypoint / 100;
+            int waypointY = currWaypoint - waypointX;
+            Direction dirToWaypoint  = myLoc.directionTo(new MapLocation(waypointX, waypointY));
+            if (rc.canMove(dirToWaypoint)) { rc.move(dirToWaypoint); }
+        }
+
+//        else if (myLoc.distanceSquaredTo(someMinerLoc) < 4) { // Arbitrarily set, move to miner's location
+//            Direction dirToMiner  = myLoc.directionTo(someMinerLoc);
+//            if (rc.canMove(dirToMiner)) {
+//                rc.move(dirToMiner);
+//            }
+//        }
+
+        else { // Move randomly
             Direction dir = directions[rng.nextInt(directions.length)];
             if (rc.canMove(dir)) { rc.move(dir); }
         }
@@ -168,7 +183,17 @@ public strictfp class RobotPlayer {
             MapLocation toAttack = enemies[0].location;
             if (rc.canAttack(toAttack)) {
                 rc.attack(toAttack);
+                if (rc.getRoundNum() < 1250) {
+                    String waypointCode = "" + toAttack.x + toAttack.y;
+                    rc.writeSharedArray(0, Integer.parseInt(waypointCode));
+                }
             }
         }
+
+
+        // Some other strategy: If one of our soldiers finds an enemy, write to the shared array an
+        // indicator of a waypoint to which all soldiers can go. Tell Archons to spawn more soldiers
+        // 0th element is waypoint index
+        // CODE: 1st 2 digits = waypoint x, last 2 digits = waypoint y
     }
 }
