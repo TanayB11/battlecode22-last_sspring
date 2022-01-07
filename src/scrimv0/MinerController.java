@@ -9,6 +9,7 @@ public class MinerController {
 
     static void runMiner(RobotController rc) throws GameActionException {
         me = rc.getLocation();
+        int movementCooldownTurns = rc.getMovementCooldownTurns();
 
         if (travelDir == null) {
             Util.rng.setSeed(rc.getID());
@@ -32,22 +33,27 @@ public class MinerController {
             rc.setIndicatorString("No ");
             Util.rng.setSeed(rc.getID());
             travelDir = Util.directions[Util.rng.nextInt(Util.directions.length)];
-            // TODO: move in traveldir
         } else { // we have a destination!
+            // TODO: stop the robots from oscillating
+            // TODO: check if the lead is gone from our destination
             rc.setIndicatorString("Pathfinding to " + destination.toString());
-            travelDir = Util.greedyNextMove(rc, destination);
-            if (rc.getMovementCooldownTurns() == 0 && !Util.safeMove(rc, travelDir)) {
-                for (int i = 0; i < Util.directions.length; i++) {
-                    if (!Util.directions[i].equals(travelDir)) {
-                        // if moved successfully, cooldown kicks in and loop will break
-                        Util.safeMove(rc, Util.directions[i]);
+            if (movementCooldownTurns == 0) {
+                travelDir = Util.greedyNextMove(rc, destination);
+                if (!Util.safeMove(rc, travelDir)) {
+                    for (int i = 0; i < Util.directions.length; i++) {
+                        if (!Util.directions[i].equals(travelDir)) {
+                            // if moved successfully, cooldown kicks in and loop will break
+                            Util.safeMove(rc, Util.directions[i]);
+                        }
                     }
                 }
             }
         }
 
         // can be more efficient by modifying above else block
-        Util.safeMove(rc, travelDir);
+        if (movementCooldownTurns == 0) {
+            Util.safeMove(rc, travelDir);
+        }
 
         if (me.equals(destination)) {
             rc.setIndicatorString("Reached destination " + destination.toString());

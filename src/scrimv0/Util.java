@@ -42,7 +42,6 @@ public class Util {
         return false;
     }
 
-    // TODO: Factor in the cooldown for rubble
     static Direction greedyNextMove(RobotController rc, MapLocation goal) throws GameActionException {
         MapLocation me = rc.getLocation();
         double lowestImpassibility = Double.MAX_VALUE;
