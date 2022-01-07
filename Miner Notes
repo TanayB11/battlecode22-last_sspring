@@ -1,0 +1,22 @@
+//Get the map size, static final
+int mapWidth = rc.getMapWidth();
+int mapHeight = rc.getMapHeight();
+
+//Isolate coords
+        MinerCoords = rc.getLocation();
+        xcoord = MinerCoords.x;
+        ycoord = MinerCoords.y;
+
+
+//Define the four corners
+        MapLocation north = new MapLocation (xcoord, mapHeight);
+        MapLocation south = new MapLocation (xcoord, 0);
+        MapLocation east = new MapLocation (mapWidth, ycoord);
+        MapLocation west = new MapLocation (0, ycoord);
+
+//Use ratio of (mapWidth-xcoord)/xcoord to determine how many miners to send east versus west
+//Each bot could go ~5 steps in that direction strictly, unless lead deposit found. Helps spread apart and prevent clumping
+//vs pathfinding directly?
+
+//Use ratio of (mapHeight-ycoord)/ycoord to determine how many miners to send south versus north
+//And send a few to near the circle around the lab -> check HP; if decreasing, send coords, pathfind, and send soldiers
