@@ -9,15 +9,24 @@ public class ArchonController {
     static void runArchon(RobotController rc) throws GameActionException {
         if (me != null) { me = rc.getLocation(); }
 
-        if (miners < 10) {
-            Util.safeSpawn(rc, RobotType.MINER, Util.directions[Util.rng.nextInt(Util.directions.length)]);
-//            MapLocation[] nearbyPb = rc.senseNearbyLocationsWithLead(rc.getType().visionRadiusSquared);
-//            Arrays.sort(nearbyPb, (a, b) -> me.distanceSquaredTo(a) - me.distanceSquaredTo(b));
-//            for (MapLocation pb : nearbyPb) {
-//                Util.safeSpawn(rc, RobotType.MINER, me.directionTo(pb));
-//            }
+        if (miners < 20) {
+            safeSpawn(rc, RobotType.MINER, Util.directions[Util.rng.nextInt(Util.directions.length)]);
             miners++;
         }
+    }
 
+    static void spamSpawnMiners(RobotController rc) throws GameActionException {
+        int mapWidth = rc.getMapWidth(), mapHeight = rc.getMapHeight();
+    }
+
+    static boolean safeSpawn(RobotController rc, RobotType type, Direction dir) throws GameActionException {
+        // Checks if Archon can spawn
+        if (rc.canBuildRobot(type, dir)) {
+            rc.buildRobot(type, dir);
+            rc.setIndicatorString("Spawned in " + dir.toString());
+            return true;
+        }
+        rc.setIndicatorString("Failed to spawn in " + dir.toString());
+        return false;
     }
 }

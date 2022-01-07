@@ -22,17 +22,6 @@ public class Util {
             Direction.NORTHWEST,
     };
 
-    static boolean safeSpawn(RobotController rc, RobotType type, Direction dir) throws GameActionException {
-        // Checks if Archon can spawn
-        if (rc.canBuildRobot(type, dir)) {
-            rc.buildRobot(type, dir);
-            rc.setIndicatorString("Spawned in " + dir.toString());
-            return true;
-        }
-        rc.setIndicatorString("Failed to spawn in " + dir.toString());
-        return false;
-    }
-
     static boolean safeMove(RobotController rc, Direction dir) throws GameActionException {
         rc.setIndicatorString("Safely trying to move to " + dir.toString());
         if (rc.canMove(dir)) {
@@ -42,12 +31,15 @@ public class Util {
         return false;
     }
 
+    // TODO: return a list in impassibility order? might stop oscillation
     static Direction greedyNextMove(RobotController rc, MapLocation goal) throws GameActionException {
         MapLocation me = rc.getLocation();
         double lowestImpassibility = Double.MAX_VALUE;
         Direction bestDir = null;
 
         for (Direction dir : directions) {
+            if (dir.equals(me.directionTo(goal).opposite())) { continue; }
+
             MapLocation nextLoc = me.add(dir);
 
             double rubble = rc.senseRubble(nextLoc);
