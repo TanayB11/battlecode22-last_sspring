@@ -1,11 +1,7 @@
 package scrimv1;
 import battlecode.common.*;
-import scala.util.Random;
 
-import javax.swing.*;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.PriorityQueue;
+import java.util.Random;
 
 public class Util {
     static final Random rng = new Random(6147);
@@ -49,7 +45,7 @@ public class Util {
         if (me.x > (((1-MID_PROP)/2) * mapWidth) && me.x < (((1-MID_PROP)/2 + MID_PROP) * mapWidth)) {
             defaultSpawn = (distToSouthWall < distToNorthWall) ? Direction.NORTH : Direction.SOUTH;
             sendingStraight = true;
-            rc.setIndicatorString("Sending straight " + defaultSpawn.toString());
+//            rc.setIndicatorString("Sending straight " + defaultSpawn.toString());
         } else if (distToEastWall < distToWestWall) {
             defaultSpawn = Direction.WEST;
         } else {
@@ -60,7 +56,7 @@ public class Util {
 
         if (me.y > (((1-MID_PROP)/2) * mapHeight) && me.y < (((1-MID_PROP)/2 + MID_PROP) * mapHeight)) {
             defaultSpawn = (distToEastWall < distToWestWall) ? Direction.WEST : Direction.EAST;
-            rc.setIndicatorString("Sending straight " + defaultSpawn.toString());
+//            rc.setIndicatorString("Sending straight " + defaultSpawn.toString());
         } else if (!sendingStraight && distToSouthWall < distToNorthWall && defaultSpawn.equals(Direction.EAST)) {
             defaultSpawn = defaultSpawn.rotateLeft();
         } else if (!sendingStraight && distToSouthWall < distToNorthWall) {
