@@ -13,14 +13,26 @@ public class MinerController {
     static void runMiner(RobotController rc) throws GameActionException {
         me = rc.getLocation();
 
+        // TODO: if we're on the other side of the map start just looking for lead/scouting
         if (travelDir == null) {
             travelDir = Util.initDir(rc);
         }
 
-        if (failedMoves >= 3) { travelDir = travelDir.opposite(); }
+        // introduce some mutation probability
+        if (rc.getRoundNum() >= 250 && Util.rng.nextDouble() <= 0.01) {
+            travelDir = Util.directions[Util.rng.nextInt(Util.directions.length)];
+        }
 
-        // TODO: distinguish exploration miners vs travelers
+        if (failedMoves >= 3) {
+            travelDir = (Util.rng.nextDouble() <= 0.02)
+                    ? Util.directions[Util.rng.nextInt(Util.directions.length)]
+                    : travelDir.opposite();
+        }
+
         // communicate who is mining, will get rid of this if
+        // TODO: once teh devs implement an overloaded senseNearbyLocationsWithLead
+        // send a miner to the lead direction if there is a nearby loc with lead > 1
+        // then set travelDir back to null to go back to swarm
         if (rc.getRobotCount() < (3 * rc.getArchonCount())) {
             MapLocation[] nearbyLead = rc.senseNearbyLocationsWithLead(rc.getType().visionRadiusSquared);
             if (nearbyLead.length > 0) {
@@ -34,6 +46,23 @@ public class MinerController {
             }
         }
 
+        // search for enemy archons (unoptimized)
+        int radius = rc.getType().actionRadiusSquared;
+        Team opponent = rc.getTeam().opponent();
+        RobotInfo[] enemies = rc.senseNearbyRobots(radius, opponent);
+        if (enemies.length > 0) {
+            for (RobotInfo enemy : enemies) {
+                if (enemy.getType().equals(RobotType.ARCHON) && enemy.getHealth() >= 100) {
+                    MapLocation enemyLoc = enemy.getLocation();
+                    int waypointCode = enemyLoc.x * 100 + enemyLoc.y;
+                    rc.writeSharedArray(0, waypointCode);
+                } else if (enemy.getType().equals(RobotType.ARCHON) && enemy.getHealth() <= 100) {
+                    rc.writeSharedArray(0, 0); // no more a destination
+                }
+            }
+        }
+
+        // mine
         for (int dx = -1; dx <= 1; dx++) {
             for (int dy = -1; dy <= 1; dy++) {
                 MapLocation mineLocation = new MapLocation(me.x + dx, me.y + dy);

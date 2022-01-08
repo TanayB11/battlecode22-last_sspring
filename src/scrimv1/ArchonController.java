@@ -9,8 +9,9 @@ public class ArchonController {
         if (me == null) { me = rc.getLocation(); }
 
         Direction defaultSpawn = null;
-        if (miners < 20) { // create 3 lanes
+        if (miners < 15) {
             defaultSpawn = Util.initDir(rc);
+            // create 3 lanes
             if (miners % 3 == 0) {
                 defaultSpawn = defaultSpawn.rotateLeft();
             } else if (miners % 3 == 2) {
@@ -19,11 +20,17 @@ public class ArchonController {
             if(safeSpawn(rc, RobotType.MINER, defaultSpawn)) {
                 miners++;
             }
+        } else if (soldiers < 20) {
+            defaultSpawn = Util.initDir(rc);
+            if(safeSpawn(rc, RobotType.SOLDIER, defaultSpawn)) {
+                soldiers++;
+            }
+        } else if (builders < 5) {
+            defaultSpawn = Util.initDir(rc);
+            if(safeSpawn(rc, RobotType.BUILDER, defaultSpawn)) {
+                builders++;
+            }
         }
-
-        // TODO: Nth Archon writes its miner id to the Nth array index
-        // If a miner finds itself there on init then it is lead farmer
-
 //        rc.setIndicatorString("Spawning to the " + defaultSpawn.toString());
     }
 
