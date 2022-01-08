@@ -13,6 +13,14 @@ public class ArchonController {
             safeSpawn(rc, RobotType.MINER, Util.directions[Util.rng.nextInt(Util.directions.length)]);
             miners++;
         }
+
+        //If there are coordinates in the array? That means that miners were damaged. Attack.
+        if(rc.readSharedArray(0) > 0 || rc.readSharedArray(1) > 0)
+        {
+            safeSpawn(rc, RobotType.SOLDIER, Util.directions[Util.rng.nextInt(Util.directions.length)]);
+            soldiers++;
+        }
+
     }
 
     static void spamSpawnMiners(RobotController rc) throws GameActionException {

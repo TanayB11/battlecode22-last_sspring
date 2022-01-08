@@ -1,6 +1,6 @@
 package scrimv0;
 import battlecode.common.*;
-
+import java.lang.*;
 import java.util.Arrays;
 
 public class MinerController {
@@ -91,5 +91,17 @@ public class MinerController {
            rc.setIndicatorString("Reached destination " + destination.toString());
            destination = null;
        }
+       if (rc.getHealth() < 40)
+       {
+           rc.setIndicatorString("Damage taken!");
+
+           //Add info to the array
+           rc.writeSharedArray(0, me.x);
+           rc.setIndicatorString("I wrote x coords to array: " + me.x);
+
+           rc.writeSharedArray(1, me.y);
+           rc.setIndicatorString("I wrote y coords to array: " + me.y);
+       }
+
    }
 }
