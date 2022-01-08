@@ -9,13 +9,7 @@ public class ArchonController {
         if (me == null) { me = rc.getLocation(); }
 
         Direction defaultSpawn = null;
-        if (miners < 3) {
-            MapLocation[] nearbyPb = rc.senseNearbyLocationsWithLead(rc.getType().visionRadiusSquared);
-
-            if(safeSpawn(rc, RobotType.MINER, defaultSpawn)) {
-                miners++;
-            }
-        } else if (miners < 20) { // create 3 lanes
+        if (miners < 20) { // create 3 lanes
             defaultSpawn = Util.initDir(rc);
             if (miners % 3 == 0) {
                 defaultSpawn = defaultSpawn.rotateLeft();
@@ -26,6 +20,10 @@ public class ArchonController {
                 miners++;
             }
         }
+
+        // TODO: Nth Archon writes its miner id to the Nth array index
+        // If a miner finds itself there on init then it is lead farmer
+
 //        rc.setIndicatorString("Spawning to the " + defaultSpawn.toString());
     }
 

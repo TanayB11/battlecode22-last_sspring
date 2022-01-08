@@ -4,15 +4,11 @@ import java.util.Arrays;
 
 public class MinerController {
     static Direction travelDir = null;
-    static MapLocation me = null, destination = null;
-    static boolean isMining = false, isExploring = true, isSwarming = false;
+    static MapLocation me = null;
+    static boolean isMining = false;
+    static int failedMoves = 0;
 
-    /**
-     * Any location with less than or equal to this amount of rubble is not an obstacle.
-     * All other squares are obstacles.
-     */
     private static final int ACCEPTABLE_RUBBLE = 25;
-
 
     static void runMiner(RobotController rc) throws GameActionException {
         me = rc.getLocation();
@@ -21,9 +17,22 @@ public class MinerController {
             travelDir = Util.initDir(rc);
         }
 
-        Util.safeMove(rc, travelDir);
+        if (failedMoves >= 3) { travelDir = travelDir.opposite(); }
 
-        // can we bug2 when rubble bad?
+        // TODO: distinguish exploration miners vs travelers
+        // communicate who is mining, will get rid of this if
+        if (rc.getRobotCount() < (3 * rc.getArchonCount())) {
+            MapLocation[] nearbyLead = rc.senseNearbyLocationsWithLead(rc.getType().visionRadiusSquared);
+            if (nearbyLead.length > 0) {
+                walkTowards(rc, nearbyLead[0]);
+            }
+        } else {
+            if (Util.safeMove(rc, travelDir)) {
+                failedMoves = 0;
+            } else if (rc.getMovementCooldownTurns() == 0) {
+                failedMoves++;
+            }
+        }
 
         for (int dx = -1; dx <= 1; dx++) {
             for (int dy = -1; dy <= 1; dy++) {
@@ -34,39 +43,32 @@ public class MinerController {
    }
 
     static void safeMine(RobotController rc, MapLocation mineLocation) throws GameActionException {
-        while (rc.canMineGold(mineLocation)) {
+        // leave lead to regen
+        while (rc.canMineGold(mineLocation) && rc.senseGold(mineLocation) > 1) {
             isMining = true;
             rc.mineGold(mineLocation);
         }
-        while (rc.canMineLead(mineLocation)) {
+        while (rc.canMineLead(mineLocation) && rc.senseLead(mineLocation) > 1) {
             isMining = true;
             rc.mineLead(mineLocation);
         }
         isMining = false;
     }
 
+    // Bug0 pathing: TODO implement bug2 instead
+    // Taken from https://github.com/battlecode/battlecode22-lectureplayer/blob/main/src/lectureplayer/Pathing.java
     static void walkTowards(RobotController rc, MapLocation target) throws GameActionException {
-        if (!rc.isMovementReady()) {
-            // If our cooldown is too high, then don't even bother!
-            // There is nothing we can do anyway.
-            return;
-        }
-
         MapLocation currentLocation = rc.getLocation();
-        // if (currentLocation == target) // this is BAD! see Lecture 2 for why.
-        if (currentLocation.equals(target)) {
-            // We're already at our goal! Nothing to do either.
-            return;
-        }
+
+        if (!rc.isMovementReady() || currentLocation.equals(target)) { return; }
 
         Direction d = currentLocation.directionTo(target);
         if (rc.canMove(d) && !isObstacle(rc, d)) {
-            // Easy case of Bug 0!
             // No obstacle in the way, so let's just go straight for it!
             rc.move(d);
+            failedMoves = 0;
             travelDir = null;
         } else {
-            // Hard case of Bug 0 :<
             // There is an obstacle in the way, so we're gonna have to go around it.
             if (travelDir == null) {
                 // If we don't know what we're trying to do
@@ -76,11 +78,11 @@ public class MinerController {
                 travelDir = d;
             }
             // Now, try to actually go around the obstacle
-            // using bugDirection!
             // Repeat 8 times to try all 8 possible directions.
             for (int i = 0; i < 8; i++) {
                 if (rc.canMove(travelDir) && !isObstacle(rc, travelDir)) {
                     rc.move(travelDir);
+                    failedMoves = 0;
                     travelDir = travelDir.rotateLeft();
                     break;
                 } else {
@@ -90,9 +92,6 @@ public class MinerController {
         }
     }
 
-    /**
-     * Checks if the square we reach by moving in direction d is an obstacle.
-     */
     private static boolean isObstacle(RobotController rc, Direction d) throws GameActionException {
         MapLocation adjacentLocation = rc.getLocation().add(d);
         int rubbleOnLocation = rc.senseRubble(adjacentLocation);
