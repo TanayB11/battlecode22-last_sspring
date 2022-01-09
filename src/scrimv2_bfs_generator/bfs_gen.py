@@ -267,6 +267,7 @@ def gen_java_defs(coord_array: np.ndarray, approved_circles: np.ndarray):
 def is_adjacent(node1: str, node2: str):
     pass
 
+# TODO : go through the entire algorithm and then just print out
 def gen_java_compares(coord_array: np.ndarray, approved_circles: np.ndarray):
     for i in range(1, len(approved_circles)): # i think it starts at 1?
 
