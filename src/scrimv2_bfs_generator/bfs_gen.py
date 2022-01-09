@@ -1,3 +1,4 @@
+from os import close
 import numpy as np
 from gen_java_defs import gen_java_defs
 
@@ -63,7 +64,7 @@ def is_adjacent(node1: str, node2: str):
 
 def gen_java_compares(coord_array: np.ndarray, approved_circles: np.ndarray, coord_map: dict):
     fout = open('compares.java', 'w')
-    checked_nodes = set()
+    fout.write('// TODO: insert the try/catch block\n')
     for i in range(1, len(approved_circles)): # i think it starts at 1?
 
         # make it a ring
@@ -105,12 +106,57 @@ def gen_java_compares(coord_array: np.ndarray, approved_circles: np.ndarray, coo
             print('node, adjprevloc', node, adj_prev_locs)
             # TODO: use adj_prev_locs to generate java code
             # the java code makes if statements comparing the node to each of the adjacent nodes
+            open_brace = '{'
+            close_brace = '}'
+
+            tabs = 1
+            first_layer = False # we're in the first 8 nodes (right next to the center)
+            fout.write(f'if (rc.onTheMap(l{node})) {open_brace}\n')
+
+            # only need to check first 8 nodes surrounding center
+            if node in ['0000', '1101', '0001', '0101', '1100', '0100', '1111', '0011', '0111']: # yes this is trash i know
+                fout.write(f'\tif (!rc.isLocationOccupied(l{node})) {open_brace}\n')
+                first_layer = True
+                tabs = 2
+
+            tabs = '\t' * tabs
+
+            # set passability to rubble; cooldown only depends on rubble (base cooldown invariant of path)
+            fout.write(f'{tabs}r{node} = rc.senseRubble(l{node});\n')
+
             for loc_to_compare in adj_prev_locs: # TODO: can bytecode optimize first few
-                if node not in checked_nodes:
-                    # v[loc] = min(v[adj prev locs] + delay)
-                    # delay is the rubble, v is time to loc
-                    fout.write('if (rc.onTheMap(l{})) {{}}\n'.format(node))
-                    checked_nodes.add(node)
+                # v[loc] = min(v[adj prev locs] + delay)
+                # delay is the rubble, v is time to loc
+                # if time to this node is further than time to node plus the rubble, use the node + delay
+                fout.write(f'{tabs}if (v{loc_to_compare} > v{node} + r{loc_to_compare}) {open_brace}\n')
+                fout.write(f'{tabs}\tv{loc_to_compare} = v{node} + r{loc_to_compare};\n')
+                if not first_layer: # update the direction
+                    fout.write(f'{tabs}\td{loc_to_compare} = d{node};\n')
+                else:
+                    # if node in ['0000', '1101', '0001', '0101', '1100', '0100', '1111', '0011', '0111']: # yes this is trash i know
+                    # if we're in the first layer, then the direction is from 0000 to the node
+                    if node == '1101':
+                        fout.write(f'{tabs}\td{node} = Direction.NORTHWEST;\n')
+                    elif node == '0001':
+                        fout.write(f'{tabs}\td{node} = Direction.NORTH;\n')
+                    elif node == '0101':
+                        fout.write(f'{tabs}\td{node} = Direction.NORTHEAST;\n')
+                    elif node == '1100':
+                        fout.write(f'{tabs}\td{node} = Direction.WEST;\n')
+                    elif node == '0100':
+                        fout.write(f'{tabs}\td{node} = Direction.EAST;\n')
+                    elif node == '1111':
+                        fout.write(f'{tabs}\td{node} = Direction.SOUTHWEST;\n')
+                    elif node == '0011':
+                        fout.write(f'{tabs}\td{node} = Direction.SOUTH;\n')
+                    elif node == '0111':
+                        fout.write(f'{tabs}\td{node} = Direction.SOUTHEAST;\n')
+                    # fout.write(f'{tabs}\td{loc_to_compare} = Direction.SOMETHING;\n')
+                fout.write(f'{tabs}{close_brace}\n')
+                if first_layer:
+                    fout.write(f'\t{close_brace}\n')
+                # checked_nodes.add(node)
+            fout.write(f'{close_brace}\n')
     fout.close()
 
 
