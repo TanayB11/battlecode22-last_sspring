@@ -1,5 +1,6 @@
-package scrimv1;
+package scrimv2;
 import battlecode.common.*;
+import scrimv2.util.Util;
 
 public class SoldierController {
     static Direction travelDir = null;

@@ -1,13 +1,17 @@
-package scrimv1;
-import battlecode.common.*;
+package scrimv2.util;
+
+import battlecode.common.Direction;
+import battlecode.common.GameActionException;
+import battlecode.common.MapLocation;
+import battlecode.common.RobotController;
 
 import java.util.Random;
 
 public class Util {
-    static final Random rng = new Random(6147);
+    public static final Random rng = new Random(6147);
 
     /** Array containing all the possible movement directions. */
-    static final Direction[] directions = {
+    public static final Direction[] directions = {
             Direction.NORTH,
             Direction.NORTHEAST,
             Direction.EAST,
@@ -18,7 +22,7 @@ public class Util {
             Direction.NORTHWEST,
     };
 
-    static boolean safeMove(RobotController rc, Direction dir) throws GameActionException {
+    public static boolean safeMove(RobotController rc, Direction dir) throws GameActionException {
         rc.setIndicatorString("Safely trying to move to " + dir.toString());
         if (rc.canMove(dir)) {
             rc.move(dir);
@@ -27,7 +31,7 @@ public class Util {
         return false;
     }
 
-    static Direction initDir(RobotController rc) {
+    public static Direction initDir(RobotController rc) {
         MapLocation me = rc.getLocation();
         // distances to different walls (measuring map dimensions to prepare for exploration)
         int mapWidth = rc.getMapWidth(), mapHeight = rc.getMapHeight();

@@ -1,4 +1,5 @@
 .java-version
+env/
 
 dist/*
 build/*
