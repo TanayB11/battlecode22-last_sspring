@@ -1,7 +1,7 @@
 import numpy as np
 
 def gen_java_defs(coord_array: np.ndarray, approved_circles: np.ndarray):
-    with open('test.java', 'w') as fout:
+    with open('definitions.java', 'w') as fout:
         shape = np.shape(coord_array)
         center = (coord_array.shape[0] // 2, coord_array.shape[1] // 2)
         

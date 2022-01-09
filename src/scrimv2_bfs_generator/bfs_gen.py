@@ -59,9 +59,6 @@ def assign_coords(vision_box: np.ndarray):
     coordArray = np.rot90(coordArray)
     return coordArray
 
-def is_adjacent(node1: str, node2: str):
-    pass
-
 def gen_java_compares(coord_array: np.ndarray, approved_circles: np.ndarray, coord_map: dict):
     fout = open('compares.java', 'w')
     fout.write('// TODO: insert the try/catch block\n')
@@ -159,7 +156,32 @@ def gen_java_compares(coord_array: np.ndarray, approved_circles: np.ndarray, coo
             fout.write(f'{close_brace}\n')
     fout.close()
 
+def gen_switch_spam():
+    fout = open('compute_direction.java', 'w')
 
+    # NOTE: static might be an issue inside a method
+    fout.write('static int dx = target.x - l0000.x;\n')
+    fout.write('static int dy = target.y - l0000.y;\n')
+
+    tabs = 0
+    open_brace = '{'
+    close_brace = '}'
+
+    fout.write(f'switch(dx) {open_brace}\n')
+    for dx in range(-4, 5):
+        fout.write(f'\tcase {dx}:\n')
+        fout.write(f'\t\tswitch(dy) {open_brace}\n')
+        for dy in range(-4, 5):
+            # TODO: include only the ones that are in the vision radius
+            # can check against the droid vision box
+            fout.write(f'\t\t\tcase {dy}:\n')
+        fout.write(f'\t\t{close_brace}\n')
+        fout.write(f'\t\tbreak;\n')
+    fout.write(f'{close_brace}\n')
+        
+
+
+    fout.close()
 
 def gen_coord_map(coord_array: np.ndarray):
     coord_map = {}
@@ -204,7 +226,8 @@ def main():
     print(coords)
     # print(coord_map)
     # gen_java_defs(coords, approvedCircleList)
-    gen_java_compares(coords, approvedCircleList, coord_map)
+    # gen_java_compares(coords, approvedCircleList, coord_map)
+    gen_switch_spam()
 
 if __name__ == '__main__':
     main()
