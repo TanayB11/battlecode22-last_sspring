@@ -9,11 +9,52 @@ public class BuilderController {
     static int totalMovesBuilder = 0;
     static int nearbyFriendlyBots = 0;
     private static final int ACCEPTABLE_RUBBLE = 25;
-    static MapLocation target = null;
+    static MapLocation target = null; 
 
     static void runBuilder(RobotController rc) throws GameActionException {
+           
 
-        if(!(rc.readSharedArray(0) == 0)) {
+            //define opposite direction so that watchtower is protected!
+            //Direction oppositeOfBuilder = me.directionTo(target).opposite();
+            //test this
+            rc.setIndicatorString("Alive?");
+            MapLocation ArchonLocation = new MapLocation(me.x, me.y);
+
+            rc.setIndicatorString("archonlocation found");
+            MapLocation BuilderPartOne = new MapLocation(me.x + 10, me.y + 10);
+
+            rc.setIndicatorString("MapLocation set");
+            walkTowards(rc, BuilderPartOne);
+            rc.setIndicatorString("Moved");
+;            
+            rc.setIndicatorString("TRY BUILDING PLEASE!");
+            
+       // if(rc.canBuildRobot(RobotType.WATCHTOWER, oppositeOfBuilder))
+           // {
+            //    rc.buildRobot(RobotType.WATCHTOWER, oppositeOfBuilder);
+         //       rc.setIndicatorString("BUILDING!");
+           // }
+          //  else
+          //  {
+         //       rc.setIndicatorString("NOT BUILDING!");
+           // }
+
+        //Repair any and all watchtowers in the area
+                
+        RobotInfo [] ListofNearbyRobots = rc.senseNearbyRobots(-1, rc.getTeam());
+        //Check if any of those robots are repairable and if we can repair the same watchtower multiple times
+        for (RobotInfo Robot : ListofNearbyRobots)
+        {
+        if (rc.canRepair(Robot.getLocation()))
+        {
+            rc.setIndicatorString("PLZ REPAIR <3!");
+            rc.repair(Robot.getLocation());
+        }
+
+        }
+
+        //Need to formalize how many turns builder should wait first
+        if(!(rc.readSharedArray(0) == 0 && totalMovesBuilder > 20)) {
             //potential edge case
             //Harvest coordinates from array that our soldiers gave us
             int xCoordDetected = rc.readSharedArray(0) / 100;
@@ -21,26 +62,11 @@ public class BuilderController {
             //Move!
             MapLocation target = new MapLocation(xCoordDetected, yCoordDetected);
             walkTowards(rc, target);
-            //rc.setIndicatorString("WALKING TO TARGET!");
-
-            //THIS ISN'T WORKING
-
-            //define opposite direction so that watchtower is protected!
-            Direction oppositeOfBuilder = me.directionTo(target).opposite();
-            rc.setIndicatorString("TRY BUILDING PLEASE!");
-
-            if(rc.canBuildRobot(RobotType.WATCHTOWER, oppositeOfBuilder))
-            {
-                rc.buildRobot(RobotType.WATCHTOWER, oppositeOfBuilder);
-                rc.setIndicatorString("BUILDING!");
-            }
-            else
-            {
-                rc.setIndicatorString("NOT BUILDING!");
-            }
+            rc.setIndicatorString("WALKING TO TARGET!");
+        
         }
 
-
+        totalMovesBuilder++;
     }
 
     //Copied from MinerController
