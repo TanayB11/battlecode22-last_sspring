@@ -47,7 +47,10 @@ public class SoldierController {
             target = vertReflection;
 
         }
-     
+
+        // initializing bfs
+        DroidBFS bfs = new DroidBFS(rc);
+
         //uses bfs to move towards target (did we do it right?)
         if (target != null) {
             Direction optDir = bfs.getBestDir(target);
@@ -161,23 +164,27 @@ if (Util.safeMove(rc, travelDir)) {
     //If slot 1,2,3,or 4 empty -> don't do anything
     //if not empty -> look at index 5 and decide
     //DOUBLE CHECK?
-    
-    int indexCount = 0;
+
+    int posDetected;
     for(int index : rc.readSharedArray(index))
     {
         if (rc.readSharedArray(index) == 0)
         {
-            indexCount++;
+
         }
         else if (rc.readSharedArray(index) != 0)
         {   
-            indexCount++;
-            int posDetected = (int) (rc.readSharedArray(4) / Math.pow(10, 4 - indexCount)) % 10;
+
+            posDetected = rc.readSharedArray(index);
             break;
         }
     }
 
     //Make a new MapLocation w/ coords
+        int xCoord = posDetected/100;
+        int yCoord = posDetected - (posDetected/100)*100;
+        MapLocation target = new MapLocation (xCoord, yCoord);
+
     //BFS to wherever posPriorityAttack says to
     //uses bfs to move towards target (did we do it right?)
         if (target != null) {
