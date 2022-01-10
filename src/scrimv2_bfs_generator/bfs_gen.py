@@ -156,30 +156,48 @@ def gen_java_compares(coord_array: np.ndarray, approved_circles: np.ndarray, coo
             fout.write(f'{close_brace}\n')
     fout.close()
 
-def gen_switch_spam():
+def gen_switch_spam(b_vision_box: np.ndarray, coord_map: dict):
     fout = open('compute_direction.java', 'w')
 
     # NOTE: static might be an issue inside a method
     fout.write('static int dx = target.x - l0000.x;\n')
     fout.write('static int dy = target.y - l0000.y;\n')
 
-    tabs = 0
     open_brace = '{'
     close_brace = '}'
+
+    # invert coord_map
+    inverted_map = {v: k for k, v in coord_map.items()}
 
     fout.write(f'switch(dx) {open_brace}\n')
     for dx in range(-4, 5):
         fout.write(f'\tcase {dx}:\n')
         fout.write(f'\t\tswitch(dy) {open_brace}\n')
-        for dy in range(-4, 5):
+
+        # get the dx-th column of b_vision_box
+        # TODO: needs to be changed for different vision radius
+        col = b_vision_box[:, dx+4]
+        col_center = 4
+        # get index of first non-zero element of col
+        first_nonzero = -col_center + np.argmax(col)
+        # get index of last non-zero element of col
+        last_nonzero = col_center - np.argmax(col[::-1])
+        # print(first_nonzero, last_nonzero)
+
+        for dy in range(first_nonzero, last_nonzero+1):
             # TODO: include only the ones that are in the vision radius
             # can check against the droid vision box
             fout.write(f'\t\t\tcase {dy}:\n')
+
+            # find direction to the node with dx, dy
+            target = inverted_map[(dx, dy)]
+            # print(target)
+
+            fout.write(f'\t\t\t\treturn d{target};\n')
+
         fout.write(f'\t\t{close_brace}\n')
         fout.write(f'\t\tbreak;\n')
     fout.write(f'{close_brace}\n')
-        
-
 
     fout.close()
 
@@ -201,7 +219,11 @@ def gen_coord_map(coord_array: np.ndarray):
     
     return coord_map
 
+def compute_heuristic():
+    pass
+
 def main():
+    # NOTE: will have to edit lots of hardcoded stuff to make it work with different vision radius
     b_vision_box_radius = (5, 5) # contains entire circle for droid
     b_vis_rad_sq = 20
     b_vis_rad = np.sqrt(b_vis_rad_sq)
@@ -225,9 +247,11 @@ def main():
     coord_map = gen_coord_map(coords) # maps our coordinate system to x/y relative to bot
     print(coords)
     # print(coord_map)
+
     # gen_java_defs(coords, approvedCircleList)
     # gen_java_compares(coords, approvedCircleList, coord_map)
-    gen_switch_spam()
+    # gen_switch_spam(b_vision_box, coord_map)
+    compute_heuristic()
 
 if __name__ == '__main__':
     main()
