@@ -1,99 +1,68 @@
-package scrimv2;
-
-import battlecode.common.Direction;
-import battlecode.common.GameActionException;
-import battlecode.common.MapLocation;
-import battlecode.common.RobotController;
-import scrimv2.util.BFS;
-import scrimv2.util.DroidBFS;
-import scrimv2.util.Util;
+package scrimv4;
+import battlecode.common.*;
+import scrimv4.util.BFS;
+import scrimv4.util.DroidBFS;
+import scrimv4.util.Util;
+import java.util.Arrays;
 
 public class MinerController {
+    // initialize everything :)
     static Direction travelDir = null;
-    static MapLocation me = null;
+    static MapLocation me = null, target = null;
     static boolean isMining = false;
-    static int failedMoves = 0;
     static final int ACCEPTABLE_RUBBLE = 25;
 
     static void runMiner(RobotController rc) throws GameActionException {
         me = rc.getLocation();
 
-        // TODO: if we're on the other side of the map start just looking for lead/scouting
+        // initializing bfs
+        DroidBFS bfs = new DroidBFS(rc);
+
+        // sets initial direction using our weird symmetry tricks
         if (travelDir == null) {
             travelDir = Util.initDir(rc);
         }
 
-        // introduce some mutation probability
-        if (rc.getRoundNum() >= 250 && Util.rng.nextDouble() <= 0.01) {
-            travelDir = Util.directions[Util.rng.nextInt(Util.directions.length)];
+        // sense lead -> if lead found, set target
+        MapLocation[] nearbyLead = rc.senseNearbyLocationsWithLead(rc.getType().visionRadiusSquared, 2);
+        // TODO: find out if the target == null is necessary
+        if (target == null && nearbyLead.length > 0 && !isMining) {
+            rc.setIndicatorString("Searching for a destination!");
+            Arrays.sort(nearbyLead, (a, b) -> me.distanceSquaredTo(a) - me.distanceSquaredTo(b));
+            // TODO: find out if this is necessary
+            for (MapLocation potentialDest : nearbyLead) {
+                if (!rc.isLocationOccupied(potentialDest)) {
+                    target = potentialDest;
+                    break;
+                }
+            }
         }
 
-        if (failedMoves >= 3) {
-            travelDir = (Util.rng.nextDouble() <= 0.02)
-                    ? Util.directions[Util.rng.nextInt(Util.directions.length)]
-                    : travelDir.opposite();
-        }
-
-        // TODO: COMMENT OUT - this is for testing
-        DroidBFS bfs = new DroidBFS(rc);
-//        MapLocation[] nearbyLead = rc.senseNearbyLocationsWithLead(rc.getType().visionRadiusSquared, 2);
-//        if (nearbyLead.length > 0) {
-////            Direction optDir = bfs.getBestDir(nearbyLead[0]);
-//            Direction optDir = bfs.getBestDir(nearbyLead[0]);
-//            if (optDir != null) {
-//                if(Util.safeMove(rc, optDir)) {
-//                    rc.setIndicatorString("YAY I WORKED, MOVED " + optDir.toString());
-//                }
-//            } else {
-//                rc.setIndicatorString("im USING GREEDY");
-//                walkTowards(rc, nearbyLead[0]);
-//            }
-//        } else {
-//            Direction optDir = bfs.getBestDir(new MapLocation(0, 0));
-//            if (optDir != null) {
-//                if(Util.safeMove(rc, optDir)) {
-//                    rc.setIndicatorString("YAY I WORKED, MOVED " + optDir.toString());
-//                }
-//            } else {
-//                rc.setIndicatorString("im USING GREEDY");
-//                walkTowards(rc, new MapLocation(0, 0));
-//            }
-//        }
-            Direction optDir = bfs.getBestDir(new MapLocation(0, 0));
+        // if it has a target, move toward it with bfs if bfs is not null
+        // if bfs is null, greedy toward it
+        if (target != null) {
+            Direction optDir = bfs.getBestDir(target);
             if (optDir != null) {
-                if(Util.safeMove(rc, optDir)) {
-                    rc.setIndicatorString("YAY I WORKED, MOVED " + optDir.toString());
+                travelDir = optDir;
+                if (Util.safeMove(rc, optDir)) {
+                    rc.setIndicatorString("I moved " + optDir.toString());
                 }
             } else {
-                rc.setIndicatorString("im USING GREEDY");
-                walkTowards(rc, new MapLocation(0, 0));
+                rc.setIndicatorString("I used greedy to move.");
+                // TODO: clean up this case because you can definitely
+                // TODO: avoid the whole acceptable rubble thing :vomit:
+                walkTowards(rc, target);
             }
-
-        // communicate who is mining, will get rid of this if
-        // TODO: once teh devs implement an overloaded senseNearbyLocationsWithLead
-        // send a miner to the lead direction if there is a nearby loc with lead > 1
-        // then set travelDir back to null to go back to swarm
-        //TODO: PUT THIS BACK
-//        if (rc.getRobotCount() < (3 * rc.getArchonCount())) {
-//            MapLocation[] nearbyLead = rc.senseNearbyLocationsWithLead(rc.getType().visionRadiusSquared);
-//            if (nearbyLead.length > 0) {
-//                travelDir = bfs.getBestDir(nearbyLead[0]);
-//            }
-//        } else {
-//            if (Util.safeMove(rc, travelDir)) {
-//                failedMoves = 0;
-//            } else if (rc.getMovementCooldownTurns() == 0) {
-//                failedMoves++;
-//            }
-//        }
-
-        // sense and communicate enemies
-//        RobotInfo[] nearbyEnemies = rc.senseNearbyRobots(rc.getType().visionRadiusSquared, rc.getTeam().opponent());
-//        for (RobotInfo enemy : nearbyEnemies) {
-//            if (enemy.getType().equals(RobotType.ARCHON)) {
-//                rc.writeSharedArray();
-//            }
-//        }
+        } else {
+            // if it doesn't have a target, just save move toward initial direction
+            // TODO: add some extra explore code so that it doesn't all just go
+            // TODO: toward an archon, bc outward exploration is good :D
+            if (Util.safeMove(rc, travelDir)) {
+                rc.setIndicatorString("GG moved " + travelDir.toString());
+            } else {
+                travelDir = null;
+            }
+        }
 
         // mine
         for (int dx = -1; dx <= 1; dx++) {
@@ -102,7 +71,91 @@ public class MinerController {
                 safeMine(rc, mineLocation);
             }
         }
-   }
+
+        if (target != null) {
+            if (rc.canSenseLocation(target) && rc.senseLead(target) < 2) {
+                target = null;
+            }
+        }
+
+        // search for enemy archons (can be optimized)
+        Team opponent = rc.getTeam().opponent();
+        RobotInfo[] enemies = rc.senseNearbyRobots(rc.getType().actionRadiusSquared, opponent);
+
+        if (enemies.length > 0) {
+            for (RobotInfo enemy : enemies) {
+                // TODO: make everything zero-index for readability
+                int posUsed = 0;
+
+                // TODO: Check if 100 is the optimal number
+                // TODO: use less bits plz
+                // this is miner's comms btw
+                if (enemy.getType().equals(RobotType.ARCHON)) {
+                    MapLocation enemyLoc = enemy.getLocation();
+                    // this is the form coordinates are read into the array
+                    int waypointCode = enemyLoc.x * 100 + enemyLoc.y;
+
+                    int comm_pos_one = rc.readSharedArray(0);
+                    boolean oneEmpty = (comm_pos_one == 0);
+
+                    int comm_pos_two = rc.readSharedArray(1);
+                    boolean twoEmpty = (comm_pos_two == 0);
+
+                    int comm_pos_three = rc.readSharedArray(2);
+                    boolean threeEmpty = (comm_pos_three == 0);
+
+                    int comm_pos_four = rc.readSharedArray(3);
+                    boolean fourEmpty = (comm_pos_four == 0);
+
+                    boolean isNew = true;
+
+                    if (waypointCode == comm_pos_one || waypointCode == comm_pos_two) {
+                        isNew = false;
+                    } else if (waypointCode == comm_pos_three || waypointCode == comm_pos_four) {
+                        isNew = false;
+                    }
+
+                    // TODO: put the archon priority status in with the same bit
+                    // TODO: as the location, it def fits
+                    // TODO: that would save us from doing two writes (only one needed)
+                    if (isNew) {
+                        if (oneEmpty) {
+                            rc.writeSharedArray(0, waypointCode);
+                            posUsed = 1;
+                        } else if (twoEmpty) {
+                            rc.writeSharedArray(1, waypointCode);
+                            posUsed = 2;
+                        } else if (threeEmpty) {
+                            rc.writeSharedArray(2, waypointCode);
+                            posUsed = 3;
+                        } else if (fourEmpty) {
+                            rc.writeSharedArray(3, waypointCode);
+                            posUsed = 4;
+                        }
+                    }
+
+                    // index 4 will contain a four digit integer of 0s or 1s
+                    // 0 indicates low priority archon, 1 indicates high priority archon
+                    // 0 means it is close to dead :()
+                    int priorities = rc.readSharedArray(4);
+                    int posUsedPriority = (int) (priorities / Math.pow(10, 4 - posUsed)) % 10;
+                    if (enemy.getHealth() >= 100) {
+                        // if the health is high, 0 turns to 1
+                        if (posUsedPriority != 1) {
+                            int valueWritten = priorities + (int) Math.pow(10, 4-posUsed);
+                            rc.writeSharedArray(4, valueWritten);
+                        }
+                    } else {
+                        // if the health is low, 1 turns to 0
+                        if (posUsedPriority != 0) {
+                            int valueWritten = priorities - (int) Math.pow(10, 4-posUsed);
+                            rc.writeSharedArray(4, valueWritten);
+                        }
+                    }
+                }
+            }
+        }
+    }
 
     static void safeMine(RobotController rc, MapLocation mineLocation) throws GameActionException {
         // leave lead to regen
@@ -128,7 +181,6 @@ public class MinerController {
         if (rc.canMove(d) && !isObstacle(rc, d)) {
             // No obstacle in the way, so let's just go straight for it!
             rc.move(d);
-            failedMoves = 0;
             travelDir = null;
         } else {
             // There is an obstacle in the way, so we're gonna have to go around it.
@@ -144,7 +196,6 @@ public class MinerController {
             for (int i = 0; i < 8; i++) {
                 if (rc.canMove(travelDir) && !isObstacle(rc, travelDir)) {
                     rc.move(travelDir);
-                    failedMoves = 0;
                     travelDir = travelDir.rotateLeft();
                     break;
                 } else {
