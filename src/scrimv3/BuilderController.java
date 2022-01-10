@@ -15,10 +15,8 @@ public class BuilderController {
     static void runBuilder(RobotController rc) throws GameActionException {
         me = rc.getLocation();
         Direction dirInitial;
-        //define opposite direction so that watchtower is protected!
-        //NE is just hardcoded to test
-        //Direction oppositeOfBuilder = Direction.NORTHEAST;
         rc.setIndicatorString("Alive?");
+
         //Determine distance to each wall:
 
         //First define each wall
@@ -43,16 +41,17 @@ public class BuilderController {
         }
 
         //change to be more general location based on distance from each wall
-        rc.setIndicatorString("archonlocation found");
-        MapLocation builderInitialPos = ArchonLocation.add(dirInitial).add(dirInitial).add(dirInitial);
+        //add randomness?
+        MapLocation builderInitialPos = ArchonLocation.add(dirInitial).add(dirInitial).add(dirInitial); //wtf?
         rc.setIndicatorString("MapLocation set");
 
+
         walkTowards(rc, builderInitialPos);
-        rc.setIndicatorString("Moved");
+        rc.setIndicatorString("Moving to initial position");
+
 
         rc.setIndicatorString("TRY BUILDING PLEASE!");
-
-        if (rc.canBuildRobot(RobotType.WATCHTOWER, dirInitial.opposite())) ;
+        if (rc.canBuildRobot(RobotType.WATCHTOWER, dirInitial.opposite())) //how often should it build?
         {
             rc.buildRobot(RobotType.WATCHTOWER, dirInitial.opposite());
 
@@ -71,10 +70,12 @@ public class BuilderController {
             {
                 walkTowards(rc, Robot.getLocation());
                 rc.repair(Robot.getLocation());
+                rc.setIndicatorString("AM REPAIRING <3!");
             }
-
         }
-        rc.setIndicatorString("AM REPAIRING <3!");
+        
+        //actually wait shouldn't builders stay near archon and the watchtowers are the ones that move around?
+        //starts moving once soldiers find enemies
         //Need to formalize how many turns builder should wait first
         if(!(rc.readSharedArray(0) == 0 && totalMovesBuilder > 20)) {
             //potential edge case

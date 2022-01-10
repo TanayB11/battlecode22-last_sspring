@@ -15,6 +15,8 @@ public class ArchonController {
 //More archons -> soldier spam strategy
 
 //Alor's 12 AM heuristic for strategy: Area of map / (difference in length and width) * amount of lead in first 10 moves * # of archons
+//large strat heuristic = big map, a lot of lead, many archons
+//small strat heuristic = small map, scarce lead, not many archons
 
     static void runArchon(RobotController rc) throws GameActionException {
 
