@@ -3,6 +3,7 @@ import battlecode.common.*;
 import java.lang.*;
 import java.util.Arrays;
 
+/* This is our miner program */
 public class MinerController {
     static Direction travelDir = null;
     static MapLocation me = null, destination = null;

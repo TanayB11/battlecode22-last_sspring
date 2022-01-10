@@ -1,4 +1,4 @@
-package scrimv1;
+package scrimv3;
 import battlecode.common.*;
 
 public class SoldierController {
