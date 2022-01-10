@@ -1,6 +1,6 @@
 // TODO: insert the try/catch block
 if (rc.onTheMap(l1101)) {
-	if (!rc.isLocationOccupied(l1101)) {
+	if (!rc.canMove(l1101)) {
 		r1101 = rc.senseRubble(l1101);
 		if (v0000 > v1101 + r0000) {
 			v0000 = v1101 + r0000;
@@ -9,7 +9,7 @@ if (rc.onTheMap(l1101)) {
 	}
 }
 if (rc.onTheMap(l0001)) {
-	if (!rc.isLocationOccupied(l0001)) {
+	if (!rc.canMove(l0001)) {
 		r0001 = rc.senseRubble(l0001);
 		if (v0000 > v0001 + r0000) {
 			v0000 = v0001 + r0000;
@@ -18,7 +18,7 @@ if (rc.onTheMap(l0001)) {
 	}
 }
 if (rc.onTheMap(l0101)) {
-	if (!rc.isLocationOccupied(l0101)) {
+	if (!rc.canMove(l0101)) {
 		r0101 = rc.senseRubble(l0101);
 		if (v0000 > v0101 + r0000) {
 			v0000 = v0101 + r0000;
@@ -27,7 +27,7 @@ if (rc.onTheMap(l0101)) {
 	}
 }
 if (rc.onTheMap(l1100)) {
-	if (!rc.isLocationOccupied(l1100)) {
+	if (!rc.canMove(l1100)) {
 		r1100 = rc.senseRubble(l1100);
 		if (v0000 > v1100 + r0000) {
 			v0000 = v1100 + r0000;
@@ -36,7 +36,7 @@ if (rc.onTheMap(l1100)) {
 	}
 }
 if (rc.onTheMap(l0100)) {
-	if (!rc.isLocationOccupied(l0100)) {
+	if (!rc.canMove(l0100)) {
 		r0100 = rc.senseRubble(l0100);
 		if (v0000 > v0100 + r0000) {
 			v0000 = v0100 + r0000;
@@ -45,7 +45,7 @@ if (rc.onTheMap(l0100)) {
 	}
 }
 if (rc.onTheMap(l1111)) {
-	if (!rc.isLocationOccupied(l1111)) {
+	if (!rc.canMove(l1111)) {
 		r1111 = rc.senseRubble(l1111);
 		if (v0000 > v1111 + r0000) {
 			v0000 = v1111 + r0000;
@@ -54,7 +54,7 @@ if (rc.onTheMap(l1111)) {
 	}
 }
 if (rc.onTheMap(l0011)) {
-	if (!rc.isLocationOccupied(l0011)) {
+	if (!rc.canMove(l0011)) {
 		r0011 = rc.senseRubble(l0011);
 		if (v0000 > v0011 + r0000) {
 			v0000 = v0011 + r0000;
@@ -63,7 +63,7 @@ if (rc.onTheMap(l0011)) {
 	}
 }
 if (rc.onTheMap(l0111)) {
-	if (!rc.isLocationOccupied(l0111)) {
+	if (!rc.canMove(l0111)) {
 		r0111 = rc.senseRubble(l0111);
 		if (v0000 > v0111 + r0000) {
 			v0000 = v0111 + r0000;

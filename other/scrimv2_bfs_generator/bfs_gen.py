@@ -112,7 +112,7 @@ def gen_java_compares(coord_array: np.ndarray, approved_circles: np.ndarray, coo
 
             # only need to check first 8 nodes surrounding center
             if node in ['0000', '1101', '0001', '0101', '1100', '0100', '1111', '0011', '0111']: # yes this is trash i know
-                fout.write(f'\tif (!rc.isLocationOccupied(l{node})) {open_brace}\n')
+                fout.write(f'\tif (!rc.canMove(l{node})) {open_brace}\n')
                 first_layer = True
                 tabs = 2
 
@@ -220,6 +220,16 @@ def gen_coord_map(coord_array: np.ndarray):
     return coord_map
 
 def compute_heuristic():
+    fout = open('heuristic.java', 'w')
+
+    fout.write('Direction ans = null;\n')
+    fout.write('double bestEstimation = 0;\n')
+    fout.write('double initialDist = Math.sqrt(l0000.distanceSquaredTo(target));\n')
+
+    # optimization: use Math.max
+
+
+    fout.close()
     pass
 
 def main():
