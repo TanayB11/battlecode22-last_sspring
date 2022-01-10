@@ -47,7 +47,10 @@ public class SoldierController {
             target = vertReflection;
 
         }
-     
+
+        // initializing bfs
+        DroidBFS bfs = new DroidBFS(rc);
+
         //uses bfs to move towards target (did we do it right?)
         if (target != null) {
             Direction optDir = bfs.getBestDir(target);
