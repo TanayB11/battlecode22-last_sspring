@@ -8,10 +8,10 @@ public class BFS {
 
     static RobotController rc;
 
-    int turnsGreedy = 0;
+//    int turnsGreedy = 0;
     MapLocation currentTarget = null;
 
-    BFS(RobotController rc){
+    public BFS(RobotController rc){
         this.rc = rc;
     }
 }

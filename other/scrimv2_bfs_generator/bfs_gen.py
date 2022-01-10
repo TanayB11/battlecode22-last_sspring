@@ -112,7 +112,7 @@ def gen_java_compares(coord_array: np.ndarray, approved_circles: np.ndarray, coo
 
             # only need to check first 8 nodes surrounding center
             if node in ['0000', '1101', '0001', '0101', '1100', '0100', '1111', '0011', '0111']: # yes this is trash i know
-                fout.write(f'\tif (!rc.canMove(l{node})) {open_brace}\n')
+                fout.write(f'\tif (!rc.isLocationOccupied(l{node})) {open_brace}\n')
                 first_layer = True
                 tabs = 2
 
@@ -125,10 +125,10 @@ def gen_java_compares(coord_array: np.ndarray, approved_circles: np.ndarray, coo
                 # v[loc] = min(v[adj prev locs] + delay)
                 # delay is the rubble, v is time to loc
                 # if time to this node is further than time to node plus the rubble, use the node + delay
-                fout.write(f'{tabs}if (v{loc_to_compare} > v{node} + r{loc_to_compare}) {open_brace}\n')
-                fout.write(f'{tabs}\tv{loc_to_compare} = v{node} + r{loc_to_compare};\n')
+                fout.write(f'{tabs}if (v{node} > v{loc_to_compare} + r{node}) {open_brace}\n')
+                fout.write(f'{tabs}\tv{node} = v{loc_to_compare} + r{node};\n')
                 if not first_layer: # update the direction
-                    fout.write(f'{tabs}\td{loc_to_compare} = d{node};\n')
+                    fout.write(f'{tabs}\td{node} = d{loc_to_compare};\n')
                 else:
                     # if node in ['0000', '1101', '0001', '0101', '1100', '0100', '1111', '0011', '0111']: # yes this is trash i know
                     # if we're in the first layer, then the direction is from 0000 to the node
@@ -219,15 +219,40 @@ def gen_coord_map(coord_array: np.ndarray):
     
     return coord_map
 
-def compute_heuristic():
+def compute_heuristic(b_vision_box: np.ndarray, approved_circles: np.ndarray, coord_map: dict):
     fout = open('heuristic.java', 'w')
+
+    # invert the coordinate map
+    inverted_map = {v: k for k, v in coord_map.items()}
 
     fout.write('Direction ans = null;\n')
     fout.write('double bestEstimation = 0;\n')
     fout.write('double initialDist = Math.sqrt(l0000.distanceSquaredTo(target));\n')
 
     # optimization: use Math.max
+    # every point that can reach outside vision radius (outer ring + 8 extra nodes)
+    # TODO: remove the sqrt?
+    # TODO: make it work for different vision radius
+    outer_ring = approved_circles[-1] - approved_circles[-2]
+    # get indices of nonzro elements of outer_ring
+    outer_ring_locs_x, outer_ring_locs_y = np.where(outer_ring == 1)
+    outer_indices = [(outer_ring_locs_x[i], outer_ring_locs_y[i]) for i in range(len(outer_ring_locs_x))]
+    center_coords = [(outer_indices[i][0] - 4, outer_indices[i][1] - 4) for i in range(len(outer_indices))]
+    wonky_coords = [inverted_map[loc] for loc in center_coords]
 
+    # write comparison to java file
+    open_brace = '{'
+    close_brace = '}'
+    for coord in wonky_coords:
+        fout.write(f'double dist{coord} = (initialDist - Math.sqrt(l{coord}.distanceSquaredTo(target))) / v{coord};\n')
+        fout.write(f'if (dist{coord} > bestEstimation) {open_brace}\n')
+        fout.write(f'\tbestEstimation = dist{coord};\n')
+        fout.write(f'\tans = d{coord};\n')
+        fout.write(f'{close_brace}\n')
+
+    fout.write('return ans;\n')
+    # print(outer_indices)
+    print(wonky_coords)
 
     fout.close()
     pass
@@ -259,9 +284,9 @@ def main():
     # print(coord_map)
 
     # gen_java_defs(coords, approvedCircleList)
-    # gen_java_compares(coords, approvedCircleList, coord_map)
+    gen_java_compares(coords, approvedCircleList, coord_map)
     # gen_switch_spam(b_vision_box, coord_map)
-    compute_heuristic()
+    # compute_heuristic(b_vision_box, approvedCircleList, coord_map)
 
 if __name__ == '__main__':
     main()
