@@ -41,20 +41,9 @@ public class MinerController {
         // if it has a target, move toward it with bfs if bfs is not null
         // if bfs is null, greedy toward it
         if (target != null) {
-            Direction optDir = bfs.getBestDir(target);
-            if (optDir != null) {
-                travelDir = optDir;
-                if (Util.safeMove(rc, optDir)) {
-                    rc.setIndicatorString("I moved " + optDir.toString());
-                }
-            } else {
-                rc.setIndicatorString("I used greedy to move.");
-                // TODO: clean up this case because you can definitely
-                // TODO: avoid the whole acceptable rubble thing :vomit:
-                walkTowards(rc, target);
-            }
+            bfs.move(target);
         } else {
-            // if it doesn't have a target, just save move toward initial direction
+            // if it doesn't have a target, just safe move toward initial direction
             // TODO: add some extra explore code so that it doesn't all just go
             // TODO: toward an archon, bc outward exploration is good :D
             if (Util.safeMove(rc, travelDir)) {
@@ -168,46 +157,5 @@ public class MinerController {
             rc.mineLead(mineLocation);
         }
         isMining = false;
-    }
-
-    // Bug0 pathing
-    // Taken from https://github.com/battlecode/battlecode22-lectureplayer/blob/main/src/lectureplayer/Pathing.java
-    static void walkTowards(RobotController rc, MapLocation target) throws GameActionException {
-        MapLocation currentLocation = rc.getLocation();
-
-        if (!rc.isMovementReady() || currentLocation.equals(target)) { return; }
-
-        Direction d = currentLocation.directionTo(target);
-        if (rc.canMove(d) && !isObstacle(rc, d)) {
-            // No obstacle in the way, so let's just go straight for it!
-            rc.move(d);
-            travelDir = null;
-        } else {
-            // There is an obstacle in the way, so we're gonna have to go around it.
-            if (travelDir == null) {
-                // If we don't know what we're trying to do
-                // make something up
-                // And, what better than to pick as the direction we want to go in
-                // the best direction towards the goal?
-                travelDir = d;
-            }
-            // Now, try to actually go around the obstacle
-            // Repeat 8 times to try all 8 possible directions.
-            for (int i = 0; i < 8; i++) {
-                if (rc.canMove(travelDir) && !isObstacle(rc, travelDir)) {
-                    rc.move(travelDir);
-                    travelDir = travelDir.rotateLeft();
-                    break;
-                } else {
-                    travelDir = travelDir.rotateRight();
-                }
-            }
-        }
-    }
-
-    private static boolean isObstacle(RobotController rc, Direction d) throws GameActionException {
-        MapLocation adjacentLocation = rc.getLocation().add(d);
-        int rubbleOnLocation = rc.senseRubble(adjacentLocation);
-        return rubbleOnLocation > ACCEPTABLE_RUBBLE;
     }
 }

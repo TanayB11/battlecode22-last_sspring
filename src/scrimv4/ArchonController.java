@@ -1,6 +1,6 @@
-package scrimv2;
+package scrimv4;
 import battlecode.common.*;
-import scrimv2.util.Util;
+import scrimv4.util.Util;
 
 public class ArchonController {
     static int miners = 0, soldiers = 0, builders = 0;
@@ -10,7 +10,8 @@ public class ArchonController {
         if (me == null) { me = rc.getLocation(); }
 
         Direction defaultSpawn = null;
-        if (miners < 15) {
+        // TODO: get rid of the 50 :()
+        if (miners < 20) {
             defaultSpawn = Util.initDir(rc);
             // create 3 lanes
             if (miners % 3 == 0) {
@@ -21,17 +22,21 @@ public class ArchonController {
             if(safeSpawn(rc, RobotType.MINER, defaultSpawn)) {
                 miners++;
             }
-        } else if (soldiers < 20) {
+        }
+        /*
+        else {
             defaultSpawn = Util.initDir(rc);
             if(safeSpawn(rc, RobotType.SOLDIER, defaultSpawn)) {
                 soldiers++;
             }
-        } else if (builders < 5) {
+        }
+        else if (builders < 5) {
             defaultSpawn = Util.initDir(rc);
             if(safeSpawn(rc, RobotType.BUILDER, defaultSpawn)) {
                 builders++;
             }
         }
+        */
 //        rc.setIndicatorString("Spawning to the " + defaultSpawn.toString());
     }
 

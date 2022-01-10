@@ -1,4 +1,4 @@
-package scrimv2;
+package scrimv4;
 
 import battlecode.common.GameActionException;
 import battlecode.common.RobotController;

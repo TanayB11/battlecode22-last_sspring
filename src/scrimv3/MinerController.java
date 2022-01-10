@@ -17,7 +17,7 @@ public class MinerController {
 
         // Checks if there's too many Miners around and forces them to spread out. This one specifically looks for the first
         // miner in the area and moves away automatically.
-
+/**
             if (totalMovesMiner > 14)
             {
                RobotInfo[] ListofNearbyRobots = rc.senseNearbyRobots(2, rc.getTeam());
@@ -61,7 +61,7 @@ public class MinerController {
                     }
                 }
             }
-
+*/
 
         // TODO: if we're on the other side of the map start just looking for lead/scouting
         if (travelDir == null) {

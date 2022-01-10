@@ -1,5 +1,8 @@
-package scrimv2.util;
-import battlecode.common.*;
+package scrimv4.util;
+
+import battlecode.common.Direction;
+import battlecode.common.MapLocation;
+import battlecode.common.RobotController;
 
 public class DroidBFS extends BFS {
     public DroidBFS(RobotController rc){
