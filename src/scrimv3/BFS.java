@@ -1,4 +1,4 @@
-package scrimv3;
+package scrimv1;
 import battlecode.common.*;
 import java.util.ArrayDeque;
 

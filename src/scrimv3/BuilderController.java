@@ -9,50 +9,72 @@ public class BuilderController {
     static int totalMovesBuilder = 0;
     static int nearbyFriendlyBots = 0;
     private static final int ACCEPTABLE_RUBBLE = 25;
-    static MapLocation target = null; 
+    static MapLocation target = null;
+
 
     static void runBuilder(RobotController rc) throws GameActionException {
-           
+        me = rc.getLocation();
+        Direction dirInitial;
+        //define opposite direction so that watchtower is protected!
+        //NE is just hardcoded to test
+        //Direction oppositeOfBuilder = Direction.NORTHEAST;
+        rc.setIndicatorString("Alive?");
+        //Determine distance to each wall:
 
-            //define opposite direction so that watchtower is protected!
-            //Direction oppositeOfBuilder = me.directionTo(target).opposite();
-            //test this
-            rc.setIndicatorString("Alive?");
-            MapLocation ArchonLocation = new MapLocation(me.x, me.y);
+        //First define each wall
+        MapLocation ArchonLocation = new MapLocation(me.x, me.y);
+        int distToWestWall = (new MapLocation(0, me.y).distanceSquaredTo(ArchonLocation));
+        int distToEastWall = (new MapLocation(rc.getMapWidth(), me.y).distanceSquaredTo(ArchonLocation));
+        int distToNorthWall = (new MapLocation(me.x, rc.getMapHeight()).distanceSquaredTo(ArchonLocation));
+        int distToSouthWall = (new MapLocation(me.x, 0).distanceSquaredTo(ArchonLocation));
 
-            rc.setIndicatorString("archonlocation found");
-            MapLocation BuilderPartOne = new MapLocation(me.x + 10, me.y + 10);
+        boolean EW = (distToEastWall > distToWestWall);
+        boolean NS = (distToNorthWall > distToSouthWall);
 
-            rc.setIndicatorString("MapLocation set");
-            walkTowards(rc, BuilderPartOne);
-            rc.setIndicatorString("Moved");
-;            
-            rc.setIndicatorString("TRY BUILDING PLEASE!");
-            
-       // if(rc.canBuildRobot(RobotType.WATCHTOWER, oppositeOfBuilder))
-           // {
-            //    rc.buildRobot(RobotType.WATCHTOWER, oppositeOfBuilder);
-         //       rc.setIndicatorString("BUILDING!");
-           // }
-          //  else
-          //  {
-         //       rc.setIndicatorString("NOT BUILDING!");
-           // }
+        //The find optimal diagonal direction!
+        if (EW && NS) {
+            dirInitial = Direction.NORTHEAST;
+        } else if (EW && !NS) {
+            dirInitial = Direction.SOUTHEAST;
+        } else if (!EW && !NS) {
+            dirInitial = Direction.SOUTHWEST;
+        } else {
+            dirInitial = Direction.NORTHWEST;
+        }
+
+        //change to be more general location based on distance from each wall
+        rc.setIndicatorString("archonlocation found");
+        MapLocation builderInitialPos = ArchonLocation.add(dirInitial).add(dirInitial).add(dirInitial);
+        rc.setIndicatorString("MapLocation set");
+
+        walkTowards(rc, builderInitialPos);
+        rc.setIndicatorString("Moved");
+
+        rc.setIndicatorString("TRY BUILDING PLEASE!");
+
+        if (rc.canBuildRobot(RobotType.WATCHTOWER, dirInitial.opposite())) ;
+        {
+            rc.buildRobot(RobotType.WATCHTOWER, dirInitial.opposite());
+
+        }
+
 
         //Repair any and all watchtowers in the area
-                
-        RobotInfo [] ListofNearbyRobots = rc.senseNearbyRobots(-1, rc.getTeam());
+
+        RobotInfo [] ListofNearbyRobots = rc.senseNearbyRobots(rc.getType().visionRadiusSquared, rc.getTeam());
         //Check if any of those robots are repairable and if we can repair the same watchtower multiple times
+        //THIS ISN"T REPAIRING????
         for (RobotInfo Robot : ListofNearbyRobots)
         {
-        if (rc.canRepair(Robot.getLocation()))
-        {
-            rc.setIndicatorString("PLZ REPAIR <3!");
-            rc.repair(Robot.getLocation());
-        }
+            rc.setIndicatorString("Will repair");
+            if (rc.canRepair(Robot.getLocation()) && Robot.getTeam() == rc.getTeam())
+            {
+                walkTowards(rc, Robot.getLocation());
+                rc.repair(Robot.getLocation());
+            }
 
         }
-
+        rc.setIndicatorString("AM REPAIRING <3!");
         //Need to formalize how many turns builder should wait first
         if(!(rc.readSharedArray(0) == 0 && totalMovesBuilder > 20)) {
             //potential edge case
@@ -63,7 +85,7 @@ public class BuilderController {
             MapLocation target = new MapLocation(xCoordDetected, yCoordDetected);
             walkTowards(rc, target);
             rc.setIndicatorString("WALKING TO TARGET!");
-        
+
         }
 
         totalMovesBuilder++;

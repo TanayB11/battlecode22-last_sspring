@@ -23,19 +23,18 @@ public class SoldierController {
         if(totalMovesSoldier == 0 || totalMovesSoldier == 1) {
             rc.setIndicatorString("First two soldiers!");
             walkTowards(rc, rotationalReflection);
-            totalMovesSoldier++;
         }
 
         if(totalMovesSoldier == 2 || totalMovesSoldier == 3) {
             rc.setIndicatorString("Third and fourth soldiers!");
             walkTowards(rc, horizReflection);
-            totalMovesSoldier++;
+
         }
 
         if(totalMovesSoldier == 4 || totalMovesSoldier == 5) {
             rc.setIndicatorString("Fifth and sixth soldiers!");
             walkTowards(rc, vertReflection);
-            totalMovesSoldier++;
+
         }
         //Define nearby robots
        RobotInfo [] ListofNearbyRobots = rc.senseNearbyRobots(-1, rc.getTeam().opponent());
@@ -59,10 +58,13 @@ public class SoldierController {
          if (currWaypoint != 0) {
              //rc.setIndicatorString("Moving to waypoint");
              int waypointX = currWaypoint / 100;
-             int waypointY = currWaypoint - waypointX;
+             int waypointY = currWaypoint - waypointX * 100;
              Direction dirToWaypoint = me.directionTo(new MapLocation(waypointX, waypointY));
+             rc.setIndicatorString("setting waypoint 1");
              if (rc.canMove(dirToWaypoint)) {
+                 rc.setIndicatorString("move to waypoint");
                  rc.move(dirToWaypoint);
+
              }
          }
 
@@ -90,6 +92,8 @@ public class SoldierController {
         RobotInfo[] enemies = rc.senseNearbyRobots(radius, opponent);
         MapLocation toAttack = (enemies.length > 0) ? enemies[0].location : null;
         if (toAttack != null && rc.canAttack(toAttack)) { rc.attack(toAttack); }
+
+        totalMovesSoldier++;
     }
 
     //Copied from MinerController
