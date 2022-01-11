@@ -11,7 +11,7 @@ public class ArchonController {
 
         Direction defaultSpawn = null;
         // TODO: get rid of the 50 :()
-        if (miners < 20) {
+        if (miners < 15) {
             defaultSpawn = Util.initDir(rc);
             // create 3 lanes
             if (miners % 3 == 0) {
@@ -22,21 +22,18 @@ public class ArchonController {
             if(safeSpawn(rc, RobotType.MINER, defaultSpawn)) {
                 miners++;
             }
-        }
-        /*
-        else {
+        } else {
             defaultSpawn = Util.initDir(rc);
             if(safeSpawn(rc, RobotType.SOLDIER, defaultSpawn)) {
                 soldiers++;
             }
         }
-        else if (builders < 5) {
-            defaultSpawn = Util.initDir(rc);
-            if(safeSpawn(rc, RobotType.BUILDER, defaultSpawn)) {
-                builders++;
-            }
-        }
-        */
+//        else if (builders < 5) {
+//            defaultSpawn = Util.initDir(rc);
+//            if(safeSpawn(rc, RobotType.BUILDER, defaultSpawn)) {
+//                builders++;
+//            }
+//        }
 //        rc.setIndicatorString("Spawning to the " + defaultSpawn.toString());
     }
 
