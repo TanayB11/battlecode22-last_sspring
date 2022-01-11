@@ -1,9 +1,7 @@
-package scrimv4;
+package sad_sprint1_bot;
 import battlecode.common.*;
-import scrimv4.util.BFS;
-import scrimv4.util.DroidBFS;
-import scrimv4.util.Util;
-import java.util.Arrays;
+import sad_sprint1_bot.util.DroidBFS;
+import sad_sprint1_bot.util.Util;
 
 public class SoldierController {
     //copy-and-pasted from miner v4 and soldier v3

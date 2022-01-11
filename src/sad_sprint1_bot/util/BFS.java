@@ -1,4 +1,4 @@
-package scrimv4.util;
+package sad_sprint1_bot.util;
 
 import battlecode.common.*;
 

@@ -1,4 +1,4 @@
-package scrimv2.util;
+package sad_sprint1_bot.util;
 
 import battlecode.common.Direction;
 import battlecode.common.GameActionException;
@@ -9,6 +9,8 @@ import java.util.Random;
 
 public class Util {
     public static final Random rng = new Random(6147);
+    private static Direction travelDir = null;
+    private static final int ACCEPTABLE_RUBBLE = 25;
 
     /** Array containing all the possible movement directions. */
     public static final Direction[] directions = {
@@ -73,5 +75,44 @@ public class Util {
         }
 
         return defaultSpawn;
+    }
+
+    static void walkTowards(RobotController rc, MapLocation target) throws GameActionException {
+        MapLocation currentLocation = rc.getLocation();
+
+        if (!rc.isMovementReady() || currentLocation.equals(target)) { return; }
+
+        Direction d = currentLocation.directionTo(target);
+        if (rc.canMove(d) && !isObstacle(rc, d)) {
+            // No obstacle in the way, so let's just go straight for it!
+            rc.move(d);
+            travelDir = null;
+        } else {
+            // There is an obstacle in the way, so we're gonna have to go around it.
+            if (travelDir == null) {
+                // If we don't know what we're trying to do
+                // make something up
+                // And, what better than to pick as the direction we want to go in
+                // the best direction towards the goal?
+                travelDir = d;
+            }
+            // Now, try to actually go around the obstacle
+            // Repeat 8 times to try all 8 possible directions.
+            for (int i = 0; i < 8; i++) {
+                if (rc.canMove(travelDir) && !isObstacle(rc, travelDir)) {
+                    rc.move(travelDir);
+                    travelDir = travelDir.rotateLeft();
+                    break;
+                } else {
+                    travelDir = travelDir.rotateRight();
+                }
+            }
+        }
+    }
+
+    private static boolean isObstacle(RobotController rc, Direction d) throws GameActionException {
+        MapLocation adjacentLocation = rc.getLocation().add(d);
+        int rubbleOnLocation = rc.senseRubble(adjacentLocation);
+        return rubbleOnLocation > ACCEPTABLE_RUBBLE;
     }
 }

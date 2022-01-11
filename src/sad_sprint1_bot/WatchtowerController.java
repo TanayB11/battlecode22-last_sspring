@@ -1,4 +1,4 @@
-package scrimv4;
+package sad_sprint1_bot;
 
 import battlecode.common.GameActionException;
 import battlecode.common.RobotController;

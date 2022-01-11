@@ -1,6 +1,6 @@
-package scrimv4;
+package sad_sprint1_bot;
 import battlecode.common.*;
-import scrimv4.util.Util;
+import sad_sprint1_bot.util.Util;
 
 public class ArchonController {
     static int miners = 0, soldiers = 0, builders = 0;

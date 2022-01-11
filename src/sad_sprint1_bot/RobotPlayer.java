@@ -1,4 +1,4 @@
-package scrimv2;
+package sad_sprint1_bot;
 
 import battlecode.common.Clock;
 import battlecode.common.GameActionException;
