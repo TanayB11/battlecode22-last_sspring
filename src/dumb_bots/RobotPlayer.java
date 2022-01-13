@@ -1,9 +1,8 @@
-package dumb_robots;
+package dumb_bots;
 
 import battlecode.common.*;
 
 import java.util.ArrayList;
-import java.util.Map;
 import java.util.Random;
 
 /**
