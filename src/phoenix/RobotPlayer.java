@@ -27,7 +27,7 @@ public strictfp class RobotPlayer {
                     case MINER:
                         MinerController.runMiner(rc); break;
                     case SOLDIER:
-                        break;
+                        SoldierController.runSoldier(rc); break;
                     case LABORATORY:
                         break;
                     case WATCHTOWER:

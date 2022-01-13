@@ -28,7 +28,14 @@ public class MinerController {
             bfs = new DroidBFS(rc);
         }
 
+        // reports if dying
+        if (rc.getHealth() < rc.getType().health * 0.1) {
+            int minersCt = rc.readSharedArray(0);
+            rc.writeSharedArray(0, minersCt - 1);
+        }
+
         // if the target location has insufficient lead and 0 gold, reset the target
+        // this will even reset when we're exploring
         if (
             targetLoc != null && rc.canSenseLocation(targetLoc) &&
             !(rc.senseLead(targetLoc) > 1) && rc.senseGold(targetLoc) == 0
@@ -45,20 +52,34 @@ public class MinerController {
         // soldiers will reset that message to 0 when they reach it
         // 2nd element of array is current enemy location (only overwrite once we reach there)
         if (rc.getHealth() < prevHP) {
-            if (rc.readSharedArray(2) == 0) {
-                rc.writeSharedArray(2, me.x * 100 + me.y);
+            if (rc.readSharedArray(1) == 0) {
+                rc.writeSharedArray(1, me.x * 100 + me.y);
             }
             isRetreating = true;
             prevHP = rc.getHealth();
         }
 
-        if (isRetreating) {
-            RobotInfo[] nearbyEnemies = rc.senseNearbyRobots(-1, rc.getTeam().opponent());
+        RobotInfo[] nearbyEnemies = rc.senseNearbyRobots(-1, rc.getTeam().opponent());
 
+        // if we find a nearby archon, report its location
+        // TODO: track enemy archon health?
+        for (RobotInfo enemy : nearbyEnemies) {
+            if (enemy.getType().equals(RobotType.ARCHON)) {
+                // 10-13 is enemy archon info
+                for (int commsIndex = 10; commsIndex++ <= 13;) {
+                    if (rc.readSharedArray(commsIndex) == 0) {
+                        MapLocation enemyLoc = enemy.getLocation();
+                        rc.writeSharedArray(commsIndex, enemyLoc.x * 100 + enemyLoc.y);
+                        break;
+                    }
+                }
+            }
+        }
+
+        if (isRetreating) {
             if (nearbyEnemies.length > 0) {
                 Arrays.sort(nearbyEnemies, (a, b) -> me.distanceSquaredTo(a.getLocation()) - me.distanceSquaredTo(b.getLocation()));
                 Direction dirAwayFromEnemy = me.directionTo(nearbyEnemies[0].getLocation()).opposite();
-                rc.setIndicatorString("DTNE: " + dirAwayFromEnemy.toString());
                 Util.safeMove(rc, dirAwayFromEnemy);
             } else { // default to spawn point
                 bfs.move(spawnPt);
@@ -103,9 +124,8 @@ public class MinerController {
         }
 
         //if we have a target, move towards it
-        if (rc.isMovementReady()) {
-            bfs.move(targetLoc);
-        }
+        bfs.move(targetLoc);
+
         rc.setIndicatorString("TARGET: " + targetLoc.toString());
     }
 

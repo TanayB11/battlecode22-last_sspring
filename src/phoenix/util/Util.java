@@ -1,13 +1,15 @@
 package phoenix.util;
 
 import battlecode.common.*;
-import java.util.Random;
+
+import java.util.*;
 
 public class Util {
     // TODO: Remove the seed for competitions
     public static final Random rng = new Random(31415);
-    static final int ACCEPTABLE_RUBBLE = 25;
+    static final int ACCEPTABLE_RUBBLE = 25; // don't greedy move to a square with more than this rubble
     private static Direction travelDir = null; // each robot has its own instance of util
+    public static final Comparator<RobotInfo> ATTACK_PRIORITY_COMPARATOR = new attackPriorityComparator();
 
     /** Array containing all the possible movement directions. */
     static final Direction[] directions = {
@@ -20,6 +22,24 @@ public class Util {
             Direction.WEST,
             Direction.NORTHWEST,
     };
+
+    // Specifies priority order for attacking enemies
+    static final List<RobotType> ATTACK_PRIORITY = Arrays.asList(
+            RobotType.ARCHON,
+            RobotType.WATCHTOWER,
+            RobotType.SAGE,
+            RobotType.BUILDER,
+            RobotType.SOLDIER,
+            RobotType.LABORATORY,
+            RobotType.MINER
+    );
+
+    static class attackPriorityComparator implements Comparator<RobotInfo> {
+        @Override
+        public int compare(RobotInfo o1, RobotInfo o2) {
+            return ATTACK_PRIORITY.indexOf(o1.getType()) - ATTACK_PRIORITY.indexOf(o2.getType());
+        }
+    }
 
     public static boolean safeMove(RobotController rc, Direction dir) throws GameActionException {
 //        rc.setIndicatorString("Safely trying to move to " + dir.toString());
