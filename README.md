@@ -33,3 +33,6 @@ This is the Battlecode 2022 scaffold, containing an `examplefuncsplayer`. Read h
 - `./gradlew update`
     Update to the newest version! Run every so often
 
+### Acknowledgements
+- [XSquare for BFS pathfinding](https://github.com/IvanGeffner/battlecode2021/tree/master/thirtyone)
+- [Teh Devs for Greedy BugNav](https://github.com/battlecode/battlecode22-lectureplayer/tree/main/src/lectureplayer)

@@ -5,6 +5,7 @@ import phoenix.util.DroidBFS;
 import phoenix.util.Util;
 
 import java.util.Arrays;
+import java.util.Comparator;
 
 public class MinerController {
     static MapLocation me = null, targetLoc = null;
@@ -40,9 +41,13 @@ public class MinerController {
             targetLoc = null;
         }
 
-        // did we get attacked?? recon and RUN back to spawn!!!
+        // if we are attacked, report crime scene loc on comms if someone else hasn't already
+        // soldiers will reset that message to 0 when they reach it
+        // 2nd element of array is current enemy location (only overwrite once we reach there)
         if (rc.getHealth() < prevHP) {
-            // TODO: comms
+            if (rc.readSharedArray(2) == 0) {
+                rc.writeSharedArray(2, me.x * 100 + me.y);
+            }
             isRetreating = true;
             prevHP = rc.getHealth();
         }
@@ -67,7 +72,7 @@ public class MinerController {
         } else { // check for lead > 1 (allow to regen)
             MapLocation[] nearbyLead = rc.senseNearbyLocationsWithLead(-1, 2);
             if (nearbyLead.length > 0) {
-                Arrays.sort(nearbyLead, (a, b) -> me.distanceSquaredTo(a) - me.distanceSquaredTo(b));
+                Arrays.sort(nearbyLead, Comparator.comparingInt(a -> me.distanceSquaredTo(a)));
                 for (MapLocation pb : nearbyLead) {
                     if (!rc.isLocationOccupied(pb)) {
                         targetLoc = pb;
