@@ -6,13 +6,13 @@ import java.util.*;
 
 public class Util {
     // TODO: Remove the seed for competitions
-    public static final Random rng = new Random(31415);
+    public static final Random rng = new Random();
     static final int ACCEPTABLE_RUBBLE = 25; // don't greedy move to a square with more than this rubble
     private static Direction travelDir = null; // each robot has its own instance of util
     public static final Comparator<RobotInfo> ATTACK_PRIORITY_COMPARATOR = new attackPriorityComparator();
 
     /** Array containing all the possible movement directions. */
-    static final Direction[] directions = {
+    public static final Direction[] directions = {
             Direction.NORTH,
             Direction.NORTHEAST,
             Direction.EAST,

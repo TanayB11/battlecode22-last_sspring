@@ -17,6 +17,11 @@ public class SoldierController {
     static final int RETREAT_TURNS = 5;
     static int retreatCounter = 0; // no. of times soldier has been retreating
 
+    static final int ACCEPTABLE_TARGET_LOC_RUBBLE = 50;
+
+    static boolean isTargetingArchon = false;
+    static int targetArchonArrLoc = -1;
+
     // TODO: if dying, retreat to spawnPt so we can harvest its guts
     // TODO: manage comms about enemy archons to swarm
 
@@ -40,20 +45,92 @@ public class SoldierController {
             targetLoc = null;
         }
 
+        // if we're near our archon target and see too much rubble on it, null
+        if (
+            targetLoc != null &&
+            rc.canSenseLocation(targetLoc) &&
+            rc.senseRubble(targetLoc) > ACCEPTABLE_TARGET_LOC_RUBBLE
+        ) {
+            targetLoc = null;
+        }
+
+
+        RobotInfo[] nearbyEnemies = rc.senseNearbyRobots(-1, rc.getTeam().opponent());
+
+        // TODO: move to util (used in MinerController)
+        for (RobotInfo enemy : nearbyEnemies) {
+            if (enemy.getType().equals(RobotType.ARCHON)) {
+                // 10-13 is enemy archon info
+                for (int commsIndex = 10; commsIndex++ <= 13;) {
+                    if (rc.readSharedArray(commsIndex) == 0) {
+                        MapLocation enemyLoc = enemy.getLocation();
+                        rc.writeSharedArray(commsIndex, enemyLoc.x * 100 + enemyLoc.y);
+                        break;
+                    }
+                }
+            }
+        }
+
         // TODO: keep tabs on the id of the robot we're attacking
         // sense nearby robots, attack in priority order
-        RobotInfo[] nearbyEnemies = rc.senseNearbyRobots(-1, rc.getTeam().opponent());
+
         if (nearbyEnemies.length > 0) {
             Arrays.sort(nearbyEnemies, Util.ATTACK_PRIORITY_COMPARATOR);
             targetLoc = nearbyEnemies[0].getLocation();
+            safeAttack(rc, targetLoc);
+
+            // if attacking archon and it's below 5% health, reset in shared array & our target
+            // also reset if we just don't see the archon
+            RobotInfo victim = rc.senseRobotAtLocation(targetLoc);
+            if (
+                isTargetingArchon &&
+                (victim == null || (victim != null && victim.getType().equals(RobotType.ARCHON) && victim.getHealth() <= victim.getType().health * 0.05))
+            ) {
+                targetLoc = null;
+                rc.writeSharedArray(targetArchonArrLoc, 0);
+            }
 //            rc.setIndicatorString("NEAREST PRIORITY ENEMY IS " + nearbyEnemies[0].getLocation().toString());
         }
 
+        // dumb archon targeting (temp strat)
         if (targetLoc == null) {
-            targetLoc = Util.getExploreLoc(rc);
+            int distSqToNearestEnemyArchon = Integer.MAX_VALUE;
+            int distSqToCurrentEnemArchon = 0;
+            MapLocation nearestArchonLoc = null;
+            int enemArchonCode = 0, enemArchonX = 0, enemArchonY = 0;
+
+            for (int commsIndex = 10; commsIndex++ <= 13;) {
+                enemArchonCode = rc.readSharedArray(commsIndex);
+                enemArchonX = enemArchonCode / 100;
+                enemArchonY = enemArchonCode % 100;
+
+                MapLocation enemArchonLoc = new MapLocation(enemArchonX, enemArchonY);
+                distSqToCurrentEnemArchon = me.distanceSquaredTo(enemArchonLoc);
+
+                if (enemArchonCode != 0 && distSqToCurrentEnemArchon < distSqToNearestEnemyArchon) {
+                    distSqToNearestEnemyArchon = distSqToCurrentEnemArchon;
+                    nearestArchonLoc = enemArchonLoc;
+                    targetArchonArrLoc = commsIndex; // so we can overwrite it when archon dies
+                }
+            }
+
+            // random explore loc is just a safety
+            if (nearestArchonLoc != null) {
+                targetLoc = nearestArchonLoc;
+                isTargetingArchon = true;
+            } else {
+                targetLoc = Util.getExploreLoc(rc);
+                isTargetingArchon = false;
+            }
         }
 
         bfs.move(targetLoc);
         rc.setIndicatorString("TARGET: " + targetLoc.toString());
+    }
+
+    static void safeAttack(RobotController rc, MapLocation attackLocation) throws GameActionException {
+        if (rc.canAttack(attackLocation)) {
+            rc.attack(attackLocation);
+        }
     }
 }

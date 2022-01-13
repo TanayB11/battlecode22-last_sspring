@@ -1,8 +1,6 @@
 package phoenix;
 import battlecode.common.*;
-import scrimv2.util.Util;
-
-import java.util.Random;
+import phoenix.util.Util;
 
 public class ArchonController {
     // TODO: check when miners die, if HP < 10% of base HP, spawn another miner
@@ -49,6 +47,19 @@ public class ArchonController {
                 rc.buildRobot(RobotType.SOLDIER, dirToSpawn);
                 soldiers++;
                 rc.writeSharedArray(1, soldiers);
+            }
+        } else {
+            // if we've met the quota, just spawn randomly (temp strat)
+            RobotType randomType = (Util.rng.nextInt() == 1) ? RobotType.MINER : RobotType.SOLDIER;
+            if (rc.canBuildRobot(randomType, dirToSpawn)) {
+                rc.buildRobot(randomType, dirToSpawn);
+                if (randomType.equals(RobotType.MINER)) {
+                    miners++;
+                    rc.writeSharedArray(1, miners);
+                } else {
+                    soldiers++;
+                    rc.writeSharedArray(1, soldiers);
+                }
             }
         }
 
