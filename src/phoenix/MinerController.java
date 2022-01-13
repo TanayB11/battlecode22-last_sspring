@@ -53,13 +53,21 @@ public class MinerController {
         }
 
         if (isRetreating) {
-            targetLoc = spawnPt;
-            bfs.move(spawnPt);
+            RobotInfo[] nearbyEnemies = rc.senseNearbyRobots(-1, rc.getTeam().opponent());
+
+            if (nearbyEnemies.length > 0) {
+                Arrays.sort(nearbyEnemies, (a, b) -> me.distanceSquaredTo(a.getLocation()) - me.distanceSquaredTo(b.getLocation()));
+                Direction dirAwayFromEnemy = me.directionTo(nearbyEnemies[0].getLocation()).opposite();
+                rc.setIndicatorString("DTNE: " + dirAwayFromEnemy.toString());
+                Util.safeMove(rc, dirAwayFromEnemy);
+            } else { // default to spawn point
+                bfs.move(spawnPt);
+            }
+
             retreatCounter++;
             if (retreatCounter == RETREAT_TURNS) {
                 isRetreating = false;
                 retreatCounter = 0;
-                targetLoc = null;
             }
         }
 
