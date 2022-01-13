@@ -17,6 +17,8 @@ public class MinerController {
     static final int RETREAT_TURNS = 5;
     static int retreatCounter = 0; // no. of times miner has been retreating
 
+    static boolean isDying = false;
+
     // TODO: bytecode optimize
     static void runMiner(RobotController rc) throws GameActionException {
         me = rc.getLocation();
@@ -29,9 +31,10 @@ public class MinerController {
         }
 
         // reports if dying
-        if (rc.getHealth() < rc.getType().health * 0.1) {
+        if (!isDying && rc.getHealth() < rc.getType().health * 0.1) {
             int minersCt = rc.readSharedArray(0);
             rc.writeSharedArray(0, minersCt - 1);
+            isDying = true;
         }
 
         // if the target location has insufficient lead and 0 gold, reset the target
