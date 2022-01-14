@@ -23,10 +23,7 @@ public class SoldierController {
     static int targetArchonArrLoc = -1;
 
     // TODO: if dying, retreat to spawnPt so we can harvest its guts
-    // TODO: manage comms about enemy archons to swarm
-
-    // TODO: compute 3 possible enemy archon locations (in archoncontroller) and share in array
-    // if we don't have a target, just send all soldiers to one of those locs
+    static boolean isDying = false;
 
     // soldier micro: head to enemy archon, kill others on the way
 
@@ -38,6 +35,13 @@ public class SoldierController {
             prevHP = rc.getType().health;
             spawnPt = new MapLocation(me.x, me.y);
             bfs = new DroidBFS(rc);
+        }
+
+        // reports if dying
+        if (!isDying && rc.getHealth() < rc.getType().health * 0.1) {
+            int soldiersCt = rc.readSharedArray(1);
+            rc.writeSharedArray(1, soldiersCt - 1);
+            isDying = true;
         }
 
         // if we're at target, reset target
@@ -54,26 +58,12 @@ public class SoldierController {
             targetLoc = null;
         }
 
-
         RobotInfo[] nearbyEnemies = rc.senseNearbyRobots(-1, rc.getTeam().opponent());
-
-        // TODO: move to util (used in MinerController)
-        for (RobotInfo enemy : nearbyEnemies) {
-            if (enemy.getType().equals(RobotType.ARCHON)) {
-                // 10-13 is enemy archon info
-                for (int commsIndex = 10; commsIndex++ <= 13;) {
-                    if (rc.readSharedArray(commsIndex) == 0) {
-                        MapLocation enemyLoc = enemy.getLocation();
-                        rc.writeSharedArray(commsIndex, enemyLoc.x * 100 + enemyLoc.y);
-                        break;
-                    }
-                }
-            }
-        }
+        Util.broadcastEnemyArchonLocs(rc, nearbyEnemies);
 
         // TODO: keep tabs on the id of the robot we're attacking
-        // sense nearby robots, attack in priority order
 
+        // sense nearby robots, attack in priority order
         if (nearbyEnemies.length > 0) {
             Arrays.sort(nearbyEnemies, Util.ATTACK_PRIORITY_COMPARATOR);
             targetLoc = nearbyEnemies[0].getLocation();
@@ -92,7 +82,7 @@ public class SoldierController {
 //            rc.setIndicatorString("NEAREST PRIORITY ENEMY IS " + nearbyEnemies[0].getLocation().toString());
         }
 
-        // dumb archon targeting (temp strat)
+        // dumb archon targeting (find nearest archon broadcasted)
         if (targetLoc == null) {
             int distSqToNearestEnemyArchon = Integer.MAX_VALUE;
             int distSqToCurrentEnemArchon = 0;

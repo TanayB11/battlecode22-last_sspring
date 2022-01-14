@@ -2,7 +2,9 @@ package phoenix.util;
 
 import battlecode.common.*;
 
+import java.awt.*;
 import java.util.*;
+import java.util.List;
 
 public class Util {
     // TODO: Remove the seed for competitions
@@ -10,6 +12,22 @@ public class Util {
     static final int ACCEPTABLE_RUBBLE = 25; // don't greedy move to a square with more than this rubble
     private static Direction travelDir = null; // each robot has its own instance of util
     public static final Comparator<RobotInfo> ATTACK_PRIORITY_COMPARATOR = new attackPriorityComparator();
+
+    // indices for shared array information about a given robot type
+    // indices 6-9 are for archons' status + locations
+    // 10-13 for enemy archons' status + location (distinguish b/t heuristic and actual)
+    // rest of array is enemy locations
+    public static int typeToArrIndex(RobotType type) {
+        switch (type) {
+            case MINER:             return 0;
+            case SOLDIER:           return 1;
+            case BUILDER:           return 2;
+            case WATCHTOWER:        return 3;
+            case SAGE:              return 4;
+            case LABORATORY:        return 5;
+            default: throw new RuntimeException("Invalid type " + type.toString());
+        }
+    }
 
     /** Array containing all the possible movement directions. */
     public static final Direction[] directions = {
@@ -38,6 +56,23 @@ public class Util {
         @Override
         public int compare(RobotInfo o1, RobotInfo o2) {
             return ATTACK_PRIORITY.indexOf(o1.getType()) - ATTACK_PRIORITY.indexOf(o2.getType());
+        }
+    }
+
+    public static void broadcastEnemyArchonLocs(RobotController rc, RobotInfo[] nearbyEnemies) throws GameActionException {
+        // if we find a nearby archon, report its location
+        // TODO: track enemy archon health?
+        for (RobotInfo enemy : nearbyEnemies) {
+            if (enemy.getType().equals(RobotType.ARCHON)) {
+                // 10-13 is enemy archon info
+                for (int commsIndex = 10; commsIndex++ <= 13;) {
+                    if (rc.readSharedArray(commsIndex) == 0) {
+                        MapLocation enemyLoc = enemy.getLocation();
+                        rc.writeSharedArray(commsIndex, enemyLoc.x * 100 + enemyLoc.y);
+                        break;
+                    }
+                }
+            }
         }
     }
 

@@ -3,7 +3,6 @@ import battlecode.common.*;
 import phoenix.util.Util;
 
 public class ArchonController {
-    // TODO: check when miners die, if HP < 10% of base HP, spawn another miner
     static final int MINERS_PER_ARCHON = 12;
     static final int SOLDIERS_PER_ARCHON = 15;
     static int miners = 0, soldiers = 0, builders = 0;
@@ -11,14 +10,6 @@ public class ArchonController {
 
     static void runArchon(RobotController rc) throws GameActionException {
         MapLocation me = rc.getLocation();
-
-        // TODO: spawn an amount proportional to map area
-        // TODO: make a better build order, spawn more soldiers/other once all our conditions are satisfied
-        // TODO: choose a better spawn direction
-
-        // sharedArray has 0 index miner, 1 index soldier, 2 index builder, 3 index watchtower, 4 index sage, 5 index lab
-        // indices 6-9 for our archons' status + locations
-        // 10-13 for enemy archons' status + locations (heuristic first, then real values | need a flag to distinguish)
 
         int archons = rc.getArchonCount();
         miners = rc.readSharedArray(0);
@@ -35,6 +26,25 @@ public class ArchonController {
         }
 
         // spawn bots
+        RobotInfo[] nearbyEnemies = rc.senseNearbyRobots(-1, rc.getTeam().opponent());
+        Util.broadcastEnemyArchonLocs(rc, nearbyEnemies);
+
+        // if enemy archon is near us, soldier rush
+        if (nearbyEnemies.length > 0) {
+            MapLocation nearbyArchonLoc = null;
+            int enemyArchonCode = 0, enemyArchonX = 0, enemyArchonY = 0;
+            // TODO: read array locs, check if enemy archon is in vision
+            for (int i = 10; i++ <= 13;) {
+                enemyArchonCode = rc.readSharedArray(i);
+                if (enemyArchonCode != 0) {
+                    enemyArchonX = enemyArchonCode / 100;
+                    enemyArchonY = enemyArchonCode % 100;
+                    nearbyArchonLoc = new MapLocation(enemyArchonX, enemyArchonY);
+                    // TODO: target soldier rush
+                }
+            }
+        }
+
         Direction dirToSpawn = Util.directions[Util.rng.nextInt(Util.directions.length)];
         if (miners < MINERS_PER_ARCHON * archons) {
             if (rc.canBuildRobot(RobotType.MINER, dirToSpawn)) {
@@ -62,14 +72,5 @@ public class ArchonController {
                 }
             }
         }
-
-        // TODO: once we know where one archon is, calculate enemy archons by map symmetry, write to shared array
-        // differentiate between a guess and actual found values with a flag
-        // Case 1: reflectional symmetry (x, y)
-        // X-axis symmetry
-
-        // Case 2: rotational symmetry
     }
-
-    // TODO: if we see an enemy archon from our archon, KILL IT (target all soldiers immediately)
 }

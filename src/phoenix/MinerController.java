@@ -63,21 +63,7 @@ public class MinerController {
         }
 
         RobotInfo[] nearbyEnemies = rc.senseNearbyRobots(-1, rc.getTeam().opponent());
-
-        // if we find a nearby archon, report its location
-        // TODO: track enemy archon health?
-        for (RobotInfo enemy : nearbyEnemies) {
-            if (enemy.getType().equals(RobotType.ARCHON)) {
-                // 10-13 is enemy archon info
-                for (int commsIndex = 10; commsIndex++ <= 13;) {
-                    if (rc.readSharedArray(commsIndex) == 0) {
-                        MapLocation enemyLoc = enemy.getLocation();
-                        rc.writeSharedArray(commsIndex, enemyLoc.x * 100 + enemyLoc.y);
-                        break;
-                    }
-                }
-            }
-        }
+        Util.broadcastEnemyArchonLocs(rc, nearbyEnemies);
 
         if (isRetreating) {
             if (nearbyEnemies.length > 0) {
