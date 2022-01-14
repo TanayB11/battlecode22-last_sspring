@@ -9,7 +9,7 @@ import java.util.Random;
 
 public class Util {
     // TODO: Remove the seed for competitions
-    public static final Random rng = new Random();
+    public static final Random rng = new Random(23636);
     static final int ACCEPTABLE_RUBBLE = 25; // don't greedy move to a square with more than this rubble
     private static Direction travelDir = null; // each robot has its own instance of util
     public static final Comparator<RobotInfo> ATTACK_PRIORITY_COMPARATOR = new attackPriorityComparator();
@@ -60,22 +60,22 @@ public class Util {
         }
     }
 
-    public static void broadcastEnemyArchonLocs(RobotController rc, RobotInfo[] nearbyEnemies) throws GameActionException {
-        // if we find a nearby archon, report its location
-        // TODO: track enemy archon health?
-        for (RobotInfo enemy : nearbyEnemies) {
-            if (enemy.getType().equals(RobotType.ARCHON)) {
-                // 10-13 is enemy archon info
-                for (int commsIndex = 10; commsIndex++ <= 13;) {
-                    if (rc.readSharedArray(commsIndex) == 0) {
-                        MapLocation enemyLoc = enemy.getLocation();
-                        rc.writeSharedArray(commsIndex, enemyLoc.x * 100 + enemyLoc.y);
-                        break;
-                    }
-                }
-            }
-        }
-    }
+//    public static void broadcastEnemyArchonLocs(RobotController rc, RobotInfo[] nearbyEnemies) throws GameActionException {
+//        // if we find a nearby archon, report its location
+//        // TODO: track enemy archon health?
+//        for (RobotInfo enemy : nearbyEnemies) {
+//            if (enemy.getType().equals(RobotType.ARCHON)) {
+//                // 10-13 is enemy archon info
+//                for (int commsIndex = 10; commsIndex++ <= 13;) {
+//                    if (rc.readSharedArray(commsIndex) == 0) {
+//                        MapLocation enemyLoc = enemy.getLocation();
+//                        rc.writeSharedArray(commsIndex, enemyLoc.x * 100 + enemyLoc.y);
+//                        break;
+//                    }
+//                }
+//            }
+//        }
+//    }
 
     public static boolean safeMove(RobotController rc, Direction dir) throws GameActionException {
 //        rc.setIndicatorString("Safely trying to move to " + dir.toString());

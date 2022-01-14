@@ -58,7 +58,7 @@ public class SoldierController {
         }
 
         RobotInfo[] nearbyEnemies = rc.senseNearbyRobots(-1, rc.getTeam().opponent());
-        Util.broadcastEnemyArchonLocs(rc, nearbyEnemies);
+//        Util.broadcastEnemyArchonLocs(rc, nearbyEnemies);
 
         // TODO: keep tabs on the id of the robot we're attacking
 

@@ -7,6 +7,8 @@ import scalar.util.Util;
 import java.util.Arrays;
 import java.util.Comparator;
 
+import static scalar.Communication.*;
+
 public class MinerController {
     static MapLocation me = null, targetLoc = null;
     static MapLocation spawnPt = null;
@@ -32,8 +34,8 @@ public class MinerController {
 
         // reports if dying
         if (!isDying && rc.getHealth() < rc.getType().health * 0.1) {
-            int minersCt = rc.readSharedArray(0);
-            rc.writeSharedArray(0, minersCt - 1);
+            int minersCt = readNumMiners(rc);
+            writeNumMiners(rc, minersCt - 1);
             isDying = true;
         }
 
@@ -55,15 +57,12 @@ public class MinerController {
         // soldiers will reset that message to 0 when they reach it
         // 2nd element of array is current enemy location (only overwrite once we reach there)
         if (rc.getHealth() < prevHP) {
-            if (rc.readSharedArray(1) == 0) {
-                rc.writeSharedArray(1, me.x * 100 + me.y);
-            }
             isRetreating = true;
             prevHP = rc.getHealth();
         }
 
         RobotInfo[] nearbyEnemies = rc.senseNearbyRobots(-1, rc.getTeam().opponent());
-        Util.broadcastEnemyArchonLocs(rc, nearbyEnemies);
+//        Util.broadcastEnemyArchonLocs(rc, nearbyEnemies);
 
         if (isRetreating) {
             if (nearbyEnemies.length > 0) {
