@@ -9,7 +9,6 @@ import java.util.Arrays;
 
 public class SoldierController {
     static MapLocation me = null, targetLoc = null;
-    static MapLocation spawnPt = null;
     static boolean isRetreating = false;
     static BFS bfs = null;
 
@@ -18,6 +17,8 @@ public class SoldierController {
     static int retreatCounter = 0; // no. of times soldier has been retreating
 
     static final int ACCEPTABLE_TARGET_LOC_RUBBLE = 50;
+    // disintegrate if we're dying and this close to our archon
+    static final int MAX_DISINTEGRATION_DISTANCE = 4;
 
     static boolean isTargetingArchon = false;
     static int targetArchonArrLoc = -1;
@@ -32,20 +33,27 @@ public class SoldierController {
         // spawn init
         if (prevHP == Integer.MIN_VALUE) {
             prevHP = rc.getType().health;
-            spawnPt = new MapLocation(me.x, me.y);
             bfs = new DroidBFS(rc);
         }
 
-        // reports if dying
-        if (!isDying && rc.getHealth() < rc.getType().health * 0.1) {
+        // reports if dying, returns to nearest archon to sacrifice
+        if (!isDying && rc.getHealth() < rc.getType().health * 0.25) {
             int soldiersCt = rc.readSharedArray(1);
             rc.writeSharedArray(1, soldiersCt - 1);
             isDying = true;
+
+            // check if returns null
+            MapLocation nearestArchon = Util.findNearestFriendlyArchon(rc);
+            targetLoc = nearestArchon;
         }
 
         // if we're at target, reset target
         if (me.equals(targetLoc)) {
             targetLoc = null;
+        }
+
+        if (isDying && me.distanceSquaredTo(targetLoc) <= MAX_DISINTEGRATION_DISTANCE) {
+            rc.disintegrate();
         }
 
         // if we're near our archon target and see too much rubble on it, null
@@ -63,12 +71,13 @@ public class SoldierController {
         // TODO: keep tabs on the id of the robot we're attacking
 
         // sense nearby robots, attack in priority order
-        if (nearbyEnemies.length > 0) {
+        // we just want to return if we're dying
+        if (!isDying && nearbyEnemies.length > 0) {
             Arrays.sort(nearbyEnemies, Util.ATTACK_PRIORITY_COMPARATOR);
             targetLoc = nearbyEnemies[0].getLocation();
             safeAttack(rc, targetLoc);
 
-            // if attacking archon and it's below 5% health, reset in shared array & our target
+            // if attacking enemy archon below 5% health, reset in shared array & our target
             // also reset if we just don't see the archon
             RobotInfo victim = rc.senseRobotAtLocation(targetLoc);
             if (
@@ -85,7 +94,7 @@ public class SoldierController {
         if (targetLoc == null) {
             int distSqToNearestEnemyArchon = Integer.MAX_VALUE;
             int distSqToCurrentEnemArchon = 0;
-            MapLocation nearestArchonLoc = null;
+            MapLocation nearestEnemyArchonLoc = null;
             int enemArchonCode = 0, enemArchonX = 0, enemArchonY = 0;
 
             for (int commsIndex = 10; commsIndex++ <= 13;) {
@@ -98,14 +107,14 @@ public class SoldierController {
 
                 if (enemArchonCode != 0 && distSqToCurrentEnemArchon < distSqToNearestEnemyArchon) {
                     distSqToNearestEnemyArchon = distSqToCurrentEnemArchon;
-                    nearestArchonLoc = enemArchonLoc;
+                    nearestEnemyArchonLoc = enemArchonLoc;
                     targetArchonArrLoc = commsIndex; // so we can overwrite it when archon dies
                 }
             }
 
             // random explore loc is just a safety
-            if (nearestArchonLoc != null) {
-                targetLoc = nearestArchonLoc;
+            if (nearestEnemyArchonLoc != null) {
+                targetLoc = nearestEnemyArchonLoc;
                 isTargetingArchon = true;
             } else {
                 targetLoc = Util.getExploreLoc(rc);
