@@ -1,4 +1,4 @@
-package growth;
+package scalar;
 
 import battlecode.common.Clock;
 import battlecode.common.GameActionException;
