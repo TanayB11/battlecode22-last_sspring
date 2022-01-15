@@ -74,6 +74,8 @@ public class ArchonController {
             }
         }
 
+        /** TODO: if soldiers detect gold on the ground, need to tell archon to spawn miner if necessary
+
         /** TODO: erase archon when it dies, can unroll loop for bytecode if needed
          // broadcast our encoded archon locations to the shared arr
          for (int i = 6; i++ <= 9;) {
@@ -96,7 +98,7 @@ public class ArchonController {
 
         // TODO: define ArchonDestruction rate to fit in the other heuristic (heuristicBuilders). This will probably be a combo of the destruction rate, map size, and turn number.
 
-        if (miners <= heuristicMiners * rc.getArchonCount() && miners <= 6) {
+        if (miners <= heuristicMiners * rc.getArchonCount() || miners <= 6) {
             if (rc.canBuildRobot(RobotType.MINER, dirToSpawn)) {
                 rc.buildRobot(RobotType.MINER, dirToSpawn);
                 miners++;
