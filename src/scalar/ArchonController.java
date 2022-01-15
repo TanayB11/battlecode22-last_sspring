@@ -95,7 +95,7 @@ public class ArchonController {
         //need to calculate totaLeadinRadius
          heuristicMiners = (int) (-18 + 0.1 * rc.getMapHeight() + 1.3333 * rc.getMapWidth() - 0.0125 * totalLeadinRadius - 0.016667 * rc.getMapHeight() * rc.getMapWidth());
 
-        // TODO: define ArchonDestruction rate to fit in the other heuristic (heuristicBuilders)
+        // TODO: define ArchonDestruction rate to fit in the other heuristic (heuristicBuilders). This will probably be a combo of the destruction rate, map size, and turn number.
 
         if (miners <= heuristicMiners * rc.getArchonCount() || miners <= 6) {
             if (rc.canBuildRobot(RobotType.MINER, dirToSpawn)) {
@@ -108,6 +108,7 @@ public class ArchonController {
                 rc.buildRobot(RobotType.SOLDIER, offensiveSpawn);
                 soldiers++;
                 rc.writeSharedArray(1, soldiers);
+                //If we want we can do the whole BFS to reflection thing
             }
         } else if (heuristicBuilders < SOMEOTHERVALUES){
             if (rc.canBuildRobot(RobotType.BUILDER, dirToSpawn)) {
