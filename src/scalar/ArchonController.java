@@ -3,43 +3,60 @@ import battlecode.common.*;
 import scalar.util.Util;
 
 public class ArchonController {
-    static final int MINERS_PER_ARCHON = 12;
-    static final int SOLDIERS_PER_ARCHON = 15;
-    static int miners = 0, soldiers = 0, builders = 0;
+    static int heuristicMiners, heuristicBuilders;
+    static int miners = 0, soldiers = 0, builders = 0, sages = 0;
     static int ArchonCurrentHealth;
+    static int turnCount;
+    static int totalLeadinRadius = 0;
 
     static void runArchon(RobotController rc) throws GameActionException {
+
+        turnCount++;
+
         MapLocation me = rc.getLocation();
 
         int archons = rc.getArchonCount();
         miners = rc.readSharedArray(0);
         soldiers = rc.readSharedArray(1);
         builders = rc.readSharedArray(2);
+
         // If it can see an enemy nearby, panic and produce soldiers
         //We spawn them in our predetermined spots
         Direction defensiveSpawn = null;
+        Direction offensiveSpawn = null;
 
         //Let's define the north/south direction as our defensive direction
-        if(rc.getMapWidth() - me.y > me.y)
-        {
+        if(rc.getMapWidth() - me.y > me.y) {
             defensiveSpawn = Direction.NORTH;
         }
-        else
-        {
+        else {
             defensiveSpawn = Direction.SOUTH;
         }
 
-        //Now we spam soldiers if we see them too close
-        while(rc.senseNearbyRobots(-1, rc.getTeam().opponent()) != null)
-        {
-            if (rc.canBuildRobot(RobotType.SAGE, defensiveSpawn))
-            {
-                rc.buildRobot(RobotType.SAGE, defensiveSpawn);
-            }
+        //Let's define the east/west direction as our defensive direction
 
-            else if (rc.canBuildRobot(RobotType.SOLDIER, defensiveSpawn))
-            {
+        if(rc.getMapHeight() - me.x > me.x) {
+           offensiveSpawn = Direction.EAST;
+        }
+        else {
+            offensiveSpawn = Direction.WEST;
+        }
+
+        //define some common things
+        Direction dirToSpawn = Util.directions[Util.rng.nextInt(Util.directions.length)];
+        RobotInfo[] nearbyEnemies = rc.senseNearbyRobots(-1, rc.getTeam().opponent());
+        Util.broadcastEnemyArchonLocs(rc, nearbyEnemies);
+
+        //soldier/sage rush if enemies are detected nearby.
+        if (nearbyEnemies.length > 0) {
+            if (rc.canBuildRobot(RobotType.SAGE, defensiveSpawn)) {
+                rc.buildRobot(RobotType.SAGE, defensiveSpawn);
+                sages++;
+            }
+            else if (rc.canBuildRobot(RobotType.SOLDIER, defensiveSpawn)) {
                 rc.buildRobot(RobotType.SOLDIER, defensiveSpawn);
+                soldiers++;
+                rc.writeSharedArray(1, soldiers);
             }
         }
 
@@ -55,14 +72,11 @@ public class ArchonController {
 
         if (rateOfHealthloss > 100 && rateOfHealthloss > 10)
         {
-            for(Direction dir : Direction.allDirections())
-            {
-                if (rc.canBuildRobot(RobotType.MINER, dir))
+                if (rc.canBuildRobot(RobotType.MINER, dirToSpawn))
                 {
-                    rc.buildRobot(RobotType.MINER, dir);
+                    rc.buildRobot(RobotType.MINER, dirToSpawn);
                     rc.setIndicatorString("Damaged and spawning a miner!");
                 }
-            }
         }
 
         // TODO: erase archon when it dies, can unroll loop for bytecode if needed
@@ -74,33 +88,35 @@ public class ArchonController {
             }
         }
 
-        // spawn bots
-        Direction dirToSpawn = Util.directions[Util.rng.nextInt(Util.directions.length)];
-        RobotInfo[] nearbyEnemies = rc.senseNearbyRobots(-1, rc.getTeam().opponent());
-        Util.broadcastEnemyArchonLocs(rc, nearbyEnemies);
 
-        // if enemy is near us, soldier rush
-        if (nearbyEnemies.length > 0) {
-            if (rc.canBuildRobot(RobotType.SOLDIER, dirToSpawn)) {
-                rc.buildRobot(RobotType.SOLDIER, dirToSpawn);
-                soldiers++;
-                rc.writeSharedArray(1, soldiers);
-            }
-        }
+        //Now normal building. Use our heuristic to guide us.
+        //The number of miners we build before soldiers is
+        //-18 + 1/10 * MapLength + 4/3 * MapWidth - 1/80 * TOTALLEAD IN RADIUS - 1/60 * MapArea
+        //need to calculate totaLeadinRadius
+         heuristicMiners = (int) (-18 + 0.1 * rc.getMapHeight() + 1.3333 * rc.getMapWidth() - 0.0125 * totalLeadinRadius - 0.016667 * rc.getMapHeight() * rc.getMapWidth());
 
-        if (miners < MINERS_PER_ARCHON * archons) {
+        // TODO: define ArchonDestruction rate to fit in the other heuristic (heuristicBuilders)
+
+        if (miners <= heuristicMiners * rc.getArchonCount() || miners <= 6) {
             if (rc.canBuildRobot(RobotType.MINER, dirToSpawn)) {
                 rc.buildRobot(RobotType.MINER, dirToSpawn);
                 miners++;
                 rc.writeSharedArray(0, miners);
             }
-        } else if (soldiers < SOLDIERS_PER_ARCHON * archons){
-            if (rc.canBuildRobot(RobotType.SOLDIER, dirToSpawn)) {
-                rc.buildRobot(RobotType.SOLDIER, dirToSpawn);
+        } else if (heuristicBuilders < SOMEVALUE){
+            if (rc.canBuildRobot(RobotType.SOLDIER, offensiveSpawn)) {
+                rc.buildRobot(RobotType.SOLDIER, offensiveSpawn);
                 soldiers++;
                 rc.writeSharedArray(1, soldiers);
             }
-        } else {
+        } else if (heuristicBuilders < SOMEOTHERVALUES){
+            if (rc.canBuildRobot(RobotType.BUILDER, dirToSpawn)) {
+                rc.buildRobot(RobotType.BUILDER, dirToSpawn);
+                builders++;
+                rc.writeSharedArray(2, builders);
+            }
+
+            else {
             // if we've met the quota, just spawn randomly (temp strat)
             RobotType randomType = (Util.rng.nextInt() == 1) ? RobotType.MINER : RobotType.SOLDIER;
             if (rc.canBuildRobot(randomType, dirToSpawn)) {
