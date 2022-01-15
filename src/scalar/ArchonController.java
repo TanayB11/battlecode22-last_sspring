@@ -26,26 +26,19 @@ public class ArchonController {
         }
 
         // spawn bots
+        Direction dirToSpawn = Util.directions[Util.rng.nextInt(Util.directions.length)];
         RobotInfo[] nearbyEnemies = rc.senseNearbyRobots(-1, rc.getTeam().opponent());
         Util.broadcastEnemyArchonLocs(rc, nearbyEnemies);
 
-        // if enemy archon is near us, soldier rush
+        // if enemy is near us, soldier rush
         if (nearbyEnemies.length > 0) {
-            MapLocation nearbyArchonLoc = null;
-            int enemyArchonCode = 0, enemyArchonX = 0, enemyArchonY = 0;
-            // TODO: read array locs, check if enemy archon is in vision
-            for (int i = 10; i++ <= 13;) {
-                enemyArchonCode = rc.readSharedArray(i);
-                if (enemyArchonCode != 0) {
-                    enemyArchonX = enemyArchonCode / 100;
-                    enemyArchonY = enemyArchonCode % 100;
-                    nearbyArchonLoc = new MapLocation(enemyArchonX, enemyArchonY);
-                    // TODO: target soldier rush
-                }
+            if (rc.canBuildRobot(RobotType.SOLDIER, dirToSpawn)) {
+                rc.buildRobot(RobotType.SOLDIER, dirToSpawn);
+                soldiers++;
+                rc.writeSharedArray(1, soldiers);
             }
         }
 
-        Direction dirToSpawn = Util.directions[Util.rng.nextInt(Util.directions.length)];
         if (miners < MINERS_PER_ARCHON * archons) {
             if (rc.canBuildRobot(RobotType.MINER, dirToSpawn)) {
                 rc.buildRobot(RobotType.MINER, dirToSpawn);
