@@ -20,7 +20,7 @@ public abstract class BFS {
 
     void reset(){
         turnsGreedy = 0;
-        mapTracker.reset();
+        MapTracker.reset();
     }
 
     public void move(MapLocation target) throws GameActionException {
@@ -32,7 +32,7 @@ public abstract class BFS {
             reset();
         } else --turnsGreedy;
         currentTarget = target;
-        mapTracker.add(rc.getLocation());
+        MapTracker.add(rc.getLocation());
     }
 
     void move(MapLocation target, boolean greedy) throws GameActionException {
@@ -44,7 +44,7 @@ public abstract class BFS {
 
         if (!greedy && turnsGreedy <= 0){
             Direction dir = getBestDir(target);
-            if (dir != null && !mapTracker.check(rc.getLocation().add(dir))){
+            if (dir != null && !MapTracker.check(rc.getLocation().add(dir))){
                 Util.safeMove(rc, dir);
                 return;
             } else activateGreedy();
