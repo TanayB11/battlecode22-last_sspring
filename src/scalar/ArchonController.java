@@ -98,6 +98,10 @@ public class ArchonController {
 
         // TODO: define ArchonDestruction rate to fit in the other heuristic (heuristicBuilders). This will probably be a combo of the destruction rate, map size, and turn number.
 
+        //define the heuristics, these are filler values
+        int SOMEVALUE = 3;
+        int SOMEOTHERVALUE = 4;
+
         if (miners <= heuristicMiners * rc.getArchonCount() || miners <= 6) {
             if (rc.canBuildRobot(RobotType.MINER, dirToSpawn)) {
                 rc.buildRobot(RobotType.MINER, dirToSpawn);
@@ -111,20 +115,27 @@ public class ArchonController {
                 rc.writeSharedArray(1, soldiers);
                 //If we want we can do the whole BFS to reflection thing
             }
-        } else if (heuristicBuilders < SOMEOTHERVALUE) {
-            if (rc.canBuildRobot(RobotType.BUILDER, dirToSpawn)) {
+        }//Maybe to make sure we have enough soldiers make 1 soldier after every 2 builders?
+         else if (heuristicBuilders < SOMEOTHERVALUE) {
+            if (rc.canBuildRobot(RobotType.SOLDIER, dirToSpawn) && turnCount%3 == 0) {
+                rc.buildRobot(RobotType.SOLDIER, dirToSpawn);
+                soldiers++;
+                rc.writeSharedArray(1, soldiers);
+            }
+            else if (rc.canBuildRobot(RobotType.BUILDER, dirToSpawn)) {
                 rc.buildRobot(RobotType.BUILDER, dirToSpawn);
                 builders++;
                 rc.writeSharedArray(2, builders);
-                //Maybe to make sure we have enough soldiers make 1 soldier after every 2 builders?
+            }
+
             } else {
                 // if we've met the quota, just spawn randomly - not sure if we should just do builders also (temp strat)
-                RobotType randomType = (Util.rng.nextInt() == 1) ? RobotType.MINER : RobotType.SOLDIER;
+                RobotType randomType = (Util.rng.nextInt() == 1) ? RobotType.BUILDER : RobotType.SOLDIER;
                 if (rc.canBuildRobot(randomType, dirToSpawn)) {
                     rc.buildRobot(randomType, dirToSpawn);
-                    if (randomType.equals(RobotType.MINER)) {
-                        miners++;
-                        rc.writeSharedArray(1, miners);
+                    if (randomType.equals(RobotType.BUILDER)) {
+                        builders++;
+                        rc.writeSharedArray(2, builders);
                     } else {
                         soldiers++;
                         rc.writeSharedArray(1, soldiers);
@@ -133,4 +144,4 @@ public class ArchonController {
             }
         }
     }
-}
+
