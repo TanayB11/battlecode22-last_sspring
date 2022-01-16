@@ -8,25 +8,24 @@ import static drake.util.Miscellaneous.rng;
 import static drake.util.SafeActions.safeBuild;
 
 
-// URGENT TODO: Reset things if the alpha archon dies
-// URGENT TODO: fix targeting
-// TODO: if archon is attacked spawn soldiers
+// TODO: if archon is attacked spawn soldiers (needs fixing)
+    // can use a flag
 
-// TODO: BUILD ORDER
-// TODO: KILL NEARBY ARCHONS IMMEDIATELY
 // heuristic for # miners before soldier
 // spawn X miners / archon (based on heuristic), consistently send soldiers, ~~then if lead production is decreasing/miners dying spawn more~~
     // if there 2x soldiers than miners, alternate b/t miner and 2 soldiers
-// if we have a target, we should send a soldier closest to that target
-// later: build queue with linkedlist/array and bitshifts
+// TODO: if we have a target, we should send a soldier closest to that target
+// TODO: build queue with linkedlist/array and bitshifts
 
 public class ArchonController {
     static int archIndex = -1, miners = 0, soldiers = 0;
     static boolean isAlpha = false;
     static int prevEnemySeven = 0, prevEnemyEight = 0, prevEnemyNine = 0, prevEnemyTen = 0, turnsSeven = 0, turnsEight = 0, turnsNine = 0, turnsTen = 0;
     static int soldierMinerBuildAlternator = 0; // don't need this when we implement build queue
+    static int prevHP = Integer.MIN_VALUE;
 
     // can be tuned
+    // TODO: test different heuristics
     static int initialMinersToSpawn = -1;
     static final int MINER_HEURISTIC_K = 450;
     static final int ROUNDS_BEFORE_WIPING_TARGET = 40;
@@ -37,7 +36,6 @@ public class ArchonController {
         if (archIndex == -1) { // init values
             initialMinersToSpawn = rc.getMapWidth() * rc.getMapHeight() / MINER_HEURISTIC_K;
             archIndex = firstArchIndexEmpty(rc);
-//            rc.setIndicatorString("HI " + Integer.toString(archIndex));
             writeOwnArchLoc(rc, archIndex);
             if (archIndex == 0) {
                 isAlpha = true;
@@ -51,12 +49,23 @@ public class ArchonController {
             // DONE: set 0th archon flag on least significant (0th) bit
             // DONE: spawn direction for soldiers (rc.directionto(archon))
             // DONE: check if flag set, then don't spawn resources if we're not the flagged archon
+        int numMiners = readNumMiners(rc);
+        int numSoldiers = readNumSoldiers(rc);
+
         MapLocation nearbyArchon = null;
         RobotInfo[] nearbyEnemies = rc.senseNearbyRobots(-1, rc.getTeam().opponent());
 
         if (nearbyEnemies.length > 0) {
             for (int i = 0; i < nearbyEnemies.length; i++) {
                 reportEnemy(rc, nearbyEnemies[i].getType(), nearbyEnemies[i].getLocation());
+            }
+
+            if (rc.getHealth() < prevHP) {
+                // spawn soldiers
+                prevHP = rc.getHealth();
+                if (safeBuild(rc, RobotType.SOLDIER, me.directionTo(nearbyEnemies[0].getLocation()))) {
+                    writeNumSoldiers(rc, numSoldiers + 1);
+                }
             }
         }
 
@@ -68,8 +77,6 @@ public class ArchonController {
         }
 
         // determine build order
-        int numMiners = readNumMiners(rc);
-        int numSoldiers = readNumSoldiers(rc);
         Direction randomSpawnDir = directions[rng.nextInt(directions.length)];
 
         // highest priority is to attack visible enemy archons

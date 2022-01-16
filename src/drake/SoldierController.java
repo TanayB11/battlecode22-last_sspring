@@ -26,7 +26,8 @@ public class SoldierController {
     static boolean isDying = false;
     static int currTargetingEnemyID = -1; // we're not targeting an enemy
 
-    // TODO: erase from array
+    // TODO: make sure there aren't too many soldiers near the target
+        //  (we can go for multiple places at once with a ton of soldiers)
 
     public static void runSoldier(RobotController rc) throws GameActionException {
         me = rc.getLocation();
@@ -102,15 +103,8 @@ public class SoldierController {
         if (targetLoc == null) {
             // TODO: replace this with a unique soldier exploration method eventually
             // this is not an ASAP TO-DO
-            // TODO : fix
             MapLocation potentialTarget = getTarget(rc);
             targetLoc = (potentialTarget != null) ? potentialTarget : minerExploreLoc(rc);
-//            if (potentialTarget != null) {
-//                targetLoc = potentialTarget;
-//                rc.setIndicatorString("NEW TARGET: " + targetLoc.toString());
-//            } else {
-//                targetLoc = minerExploreLoc(rc);
-//            }
         }
 
         bfs.move(targetLoc);
