@@ -1,27 +1,22 @@
-package scalar;
+package drake;
+
 import battlecode.common.*;
-import scalar.util.BFS;
-import scalar.util.DroidBFS;
-import scalar.util.Util;
 
 import java.util.Arrays;
 import java.util.Comparator;
 
-import static scalar.Communication.*;
+import static drake.Communication.*;
+import static drake.Exploration.minerExploreLoc;
+import static drake.SafeActions.safeMine;
+import static drake.SafeActions.safeMove;
 
 public class MinerController {
-    static MapLocation me = null, targetLoc = null;
-    static MapLocation spawnPt = null;
-    static boolean isRetreating = false;
+    static MapLocation me = null, targetLoc = null, spawnPt = null;
+    static boolean isRetreating = false, isDying = false;
+    static int prevHP = Integer.MIN_VALUE, retreatCounter = 0;
+    static final int RETREAT_TURNS = 5;
     static BFS bfs = null;
 
-    static int prevHP = Integer.MIN_VALUE;
-    static final int RETREAT_TURNS = 5;
-    static int retreatCounter = 0; // no. of times miner has been retreating
-
-    static boolean isDying = false;
-
-    // TODO: bytecode optimize
     static void runMiner(RobotController rc) throws GameActionException {
         me = rc.getLocation();
 
@@ -33,17 +28,16 @@ public class MinerController {
         }
 
         // reports if dying
-        if (!isDying && rc.getHealth() < rc.getType().health * 0.1) {
-            int minersCt = readNumMiners(rc);
-            writeNumMiners(rc, minersCt - 1);
+        if (!isDying && rc.getHealth() < rc.getType().health * 0.25) {
+            writeNumMiners(rc, readNumMiners(rc) - 1);
             isDying = true;
         }
 
-        // if the target location has insufficient lead and 0 gold, reset the target
+        // if the target location has < 2 lead and 0 gold, reset the target
         // this will even reset when we're exploring
         if (
-            targetLoc != null && rc.canSenseLocation(targetLoc) &&
-            !(rc.senseLead(targetLoc) > 1) && rc.senseGold(targetLoc) == 0
+                targetLoc != null && rc.canSenseLocation(targetLoc) &&
+                        !(rc.senseLead(targetLoc) > 1) && rc.senseGold(targetLoc) == 0
         ) {
             targetLoc = null;
         }
@@ -53,22 +47,23 @@ public class MinerController {
             targetLoc = null;
         }
 
-        // if we are attacked, report crime scene loc on comms if someone else hasn't already
-        // soldiers will reset that message to 0 when they reach it
-        // 2nd element of array is current enemy location (only overwrite once we reach there)
+        // retreat if taking damage
         if (rc.getHealth() < prevHP) {
             isRetreating = true;
             prevHP = rc.getHealth();
+            retreatCounter = 0;
         }
 
         RobotInfo[] nearbyEnemies = rc.senseNearbyRobots(-1, rc.getTeam().opponent());
-//        Util.broadcastEnemyArchonLocs(rc, nearbyEnemies);
+        for (int i = 0; i <= nearbyEnemies.length; i++) {
+            reportEnemy(rc, nearbyEnemies[i].getType(), nearbyEnemies[i].getLocation());
+        }
 
         if (isRetreating) {
             if (nearbyEnemies.length > 0) {
                 Arrays.sort(nearbyEnemies, (a, b) -> me.distanceSquaredTo(a.getLocation()) - me.distanceSquaredTo(b.getLocation()));
                 Direction dirAwayFromEnemy = me.directionTo(nearbyEnemies[0].getLocation()).opposite();
-                Util.safeMove(rc, dirAwayFromEnemy);
+                safeMove(rc, dirAwayFromEnemy);
             } else { // default to spawn point
                 bfs.move(spawnPt);
             }
@@ -108,17 +103,12 @@ public class MinerController {
         }
 
         if (targetLoc == null) {
-            targetLoc = Util.getExploreLoc(rc);
+            targetLoc = minerExploreLoc(rc);
         }
 
         //if we have a target, move towards it
         bfs.move(targetLoc);
 
         rc.setIndicatorString("TARGET: " + targetLoc.toString());
-    }
-
-    static void safeMine(RobotController rc, MapLocation mineLocation) throws GameActionException {
-        while (rc.canMineGold(mineLocation)) { rc.mineGold(mineLocation); }
-        while (rc.canMineLead(mineLocation) && rc.senseLead(mineLocation) > 1) { rc.mineLead(mineLocation); }
     }
 }
