@@ -112,6 +112,8 @@ public class ArchonController {
 
         // URGENT TODO: Reset things if the alpha archon dies
         if (isAlpha) {
+            alphaSendHeartbeat(rc);
+
             int currentTurn = rc.getRoundNum();
 
             if (rc.readSharedArray(7) != prevEnemySeven) {
@@ -152,6 +154,13 @@ public class ArchonController {
             if (currentTurn == turnsTen) {
                 prevEnemyTen = 0;
                 rc.writeSharedArray(10, 0);
+            }
+        } else { // check that the alpha is pinging
+            int alphaPing = listenAlphaHeartbeat(rc);
+            int roundNum = rc.getRoundNum();
+            if (alphaPing != roundNum) {
+                clearIndex(rc, archIndex);
+                writeOwnArchLoc(rc, 0);
             }
         }
     }

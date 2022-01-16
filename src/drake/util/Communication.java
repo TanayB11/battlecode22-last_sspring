@@ -5,6 +5,8 @@ import battlecode.common.MapLocation;
 import battlecode.common.RobotController;
 import battlecode.common.RobotType;
 
+import java.awt.*;
+
 public class Communication {
     /*
     Functions:
@@ -159,6 +161,10 @@ public class Communication {
         return false;
     }
 
+    public static void clearIndex(RobotController rc, int index) throws GameActionException {
+        rc.writeSharedArray(index, 0);
+    }
+
     // Section 4: Targeting helpers
     // dedicated indices 7-10
     static void writeEnemy(RobotController rc, RobotType type, MapLocation locationSpotted, int index) throws GameActionException {
@@ -280,5 +286,14 @@ public class Communication {
             // priorityTen is largest
             return readEnemyLoc(rc, 10);
         }
+    }
+
+    // alpha archon pings w/ round num if it's alive
+    public static void alphaSendHeartbeat(RobotController rc) throws GameActionException {
+        rc.writeSharedArray(11, rc.getRoundNum());
+    }
+
+    public static int listenAlphaHeartbeat(RobotController rc) throws GameActionException {
+        return rc.readSharedArray(11);
     }
 }
