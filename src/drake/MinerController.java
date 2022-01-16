@@ -57,8 +57,10 @@ public class MinerController {
         }
 
         RobotInfo[] nearbyEnemies = rc.senseNearbyRobots(-1, rc.getTeam().opponent());
-        for (int i = 0; i <= nearbyEnemies.length; i++) {
-            reportEnemy(rc, nearbyEnemies[i].getType(), nearbyEnemies[i].getLocation());
+        if (nearbyEnemies.length > 0) {
+            for (int i = 0; i < nearbyEnemies.length; i++) {
+                reportEnemy(rc, nearbyEnemies[i].getType(), nearbyEnemies[i].getLocation());
+            }
         }
 
         if (isRetreating) {

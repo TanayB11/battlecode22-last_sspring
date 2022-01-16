@@ -32,7 +32,7 @@ public class ArchonController {
         if (archIndex == -1) { // init values
             initialMinersToSpawn = rc.getMapWidth() * rc.getMapHeight() / MINER_HEURISTIC_K;
             archIndex = firstArchIndexEmpty(rc);
-            rc.setIndicatorString("HI " + Integer.toString(archIndex) + " " + );
+//            rc.setIndicatorString("HI " + Integer.toString(archIndex));
             writeOwnArchLoc(rc, archIndex);
             if (archIndex == 0) {
                 isAlpha = true;
@@ -48,8 +48,11 @@ public class ArchonController {
             // DONE: check if flag set, then don't spawn resources if we're not the flagged archon
         MapLocation nearbyArchon = null;
         RobotInfo[] nearbyEnemies = rc.senseNearbyRobots(-1, rc.getTeam().opponent());
-        for (int i = 0; i <= nearbyEnemies.length; i++) {
-            reportEnemy(rc, nearbyEnemies[i].getType(), nearbyEnemies[i].getLocation());
+
+        if (nearbyEnemies.length > 0) {
+            for (int i = 0; i < nearbyEnemies.length; i++) {
+                reportEnemy(rc, nearbyEnemies[i].getType(), nearbyEnemies[i].getLocation());
+            }
         }
 
         for (RobotInfo enemy : nearbyEnemies) {
@@ -78,15 +81,17 @@ public class ArchonController {
             alternateSpawnMinerSoldier(rc, me.directionTo(nearbyArchon), numMiners, numSoldiers);
             throwFlag(rc, 0, 0); // throw a flag on 0th archon (comms array index 0)
         } else if (numMiners < initialMinersToSpawn && !adjacentArchonFlag) {
-            safeBuild(rc, RobotType.MINER, randomSpawnDir);
-            writeNumMiners(rc, numMiners + 1);
+            if (safeBuild(rc, RobotType.MINER, randomSpawnDir)) {
+                writeNumMiners(rc, numMiners + 1);
+            }
         } else if (!adjacentArchonFlag) {
             // build soldiers unless...
             // if we sense a nearby archon or have enough soldiers
             if (numSoldiers < 2*numMiners) {
                 // TODO: make smart spawn direction for soldiers
-                safeBuild(rc, RobotType.SOLDIER, randomSpawnDir);
-                writeNumSoldiers(rc, numSoldiers + 1);
+                if (safeBuild(rc, RobotType.SOLDIER, randomSpawnDir)) {
+                    writeNumSoldiers(rc, numSoldiers + 1);
+                }
             } else {
                 alternateSpawnMinerSoldier(rc, randomSpawnDir, numMiners, numSoldiers);
             }
@@ -140,11 +145,13 @@ public class ArchonController {
     static void alternateSpawnMinerSoldier(RobotController rc, Direction dir, int numMiners, int numSoldiers) throws GameActionException {
         // alternate 2 soldiers, 1 miner
         if (soldierMinerBuildAlternator % 3 != 2) {
-            safeBuild(rc, RobotType.SOLDIER, dir);
-            writeNumSoldiers(rc, numSoldiers + 1);
+            if(safeBuild(rc, RobotType.SOLDIER, dir)) {
+                writeNumSoldiers(rc, numSoldiers + 1);
+            }
         } else {
-            safeBuild(rc, RobotType.MINER, dir);
-            writeNumMiners(rc, numMiners + 1);
+            if (safeBuild(rc, RobotType.MINER, dir)) {
+                writeNumMiners(rc, numMiners + 1);
+            }
         }
         soldierMinerBuildAlternator++;
     }

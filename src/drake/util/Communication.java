@@ -33,52 +33,66 @@ public class Communication {
 
     // Section 1a: Reading number of units
     public static int readNumMiners(RobotController rc) throws GameActionException {
-        return (rc.readSharedArray(8) & 65280) >> 8;
+        // 65280 comes from (255 << 8), and 255 comes from 11111111
+        // xxxxxxxxyyyyyyyy
+        // 1111111100000000 = 65280_10
+        // xxxxxxxx00000000
+        // xxxxxxxx
+        return (rc.readSharedArray(4) & 65280) >> 8;
     }
 
     static int readNumBuilders(RobotController rc) throws GameActionException {
-        return (rc.readSharedArray(9) & 65280) >> 8;
+        return (rc.readSharedArray(5) & 65280) >> 8;
     }
 
     static int readNumSages(RobotController rc) throws GameActionException {
-        return (rc.readSharedArray(10) & 65280) >> 8;
+        return (rc.readSharedArray(6) & 65280) >> 8;
     }
 
     public static int readNumSoldiers(RobotController rc) throws GameActionException {
-        return rc.readSharedArray(8) & 255;
+//        System.out.println("TESTING READ: " + Integer.toString(rc.readSharedArray(4) & ~(255 << 8)));
+        // 00000000yyyyyyyy
+        // 0000000011111111
+        // 255 >> 8
+        return rc.readSharedArray(4) & ~(255 << 8);
     }
 
     static int readNumWatchtowers(RobotController rc) throws GameActionException {
-        return rc.readSharedArray(9) & 255;
+        return rc.readSharedArray(5) & ~(255 << 8);
     }
 
     static int readNumLabs(RobotController rc) throws GameActionException {
-        return rc.readSharedArray(10) & 255;
+        return rc.readSharedArray(6) & ~(255 << 8);
     }
 
     // Section 1b: Writing to number of units
     public static void writeNumMiners(RobotController rc, int numUnits)  throws GameActionException {
-        rc.writeSharedArray(8, (rc.readSharedArray(8) & ~65280) | (numUnits << 8));
+        // xxxxxxxxyyyyyyyy
+        // 0000000011111111
+        // 00000000yyyyyyyy
+        // zzzzzzzz00000000
+        // zzzzzzzzyyyyyyyy
+        rc.writeSharedArray(4, (rc.readSharedArray(4) & ~65280) | (numUnits << 8));
     }
 
     static void writeNumBuilders(RobotController rc, int numUnits)  throws GameActionException {
-        rc.writeSharedArray(9, (rc.readSharedArray(9) & ~65280) | (numUnits << 8));
+        rc.writeSharedArray(5, (rc.readSharedArray(5) & ~65280) | (numUnits << 8));
     }
 
     static void writeNumSages(RobotController rc, int numUnits)  throws GameActionException {
-        rc.writeSharedArray(10, (rc.readSharedArray(10) & ~65280) | (numUnits << 8));
+        rc.writeSharedArray(6, (rc.readSharedArray(6) & ~65280) | (numUnits << 8));
     }
 
     public static void writeNumSoldiers(RobotController rc, int numUnits) throws GameActionException {
-        rc.writeSharedArray(8, (rc.readSharedArray(8) & ~255) | numUnits);
+        rc.writeSharedArray(4, ((rc.readSharedArray(4) & (255 << 8)) | numUnits));
     }
 
     static void writeNumWatchtowers(RobotController rc, int numUnits) throws GameActionException {
-        rc.writeSharedArray(9, (rc.readSharedArray(9) & ~255) | numUnits);
+        rc.writeSharedArray(5, (rc.readSharedArray(5) & (255 << 8)) | numUnits);
     }
 
     static void writeNumLabs(RobotController rc, int numUnits) throws GameActionException {
-        rc.writeSharedArray(10, (rc.readSharedArray(10) & ~255) | numUnits);
+        rc.writeSharedArray(6, (rc.readSharedArray(6) & (255 << 8)) | numUnits);
     }
 
     // Section 2: Archon positioning
@@ -90,7 +104,11 @@ public class Communication {
         int archonComm = rc.readSharedArray(index);
 
         if (archonComm != 0) {
-            // 1111110000000000
+            // xxxxxxyyyyyyzzzz
+            // 1111110000000000 = 64512
+            // 0000001111110000 = 1008
+            // xxxxxxyyyyyyzzzz
+
             int archonX = (archonComm & 64512) >> 10;
             int archonY = (archonComm & 1008) >> 4;
 
@@ -103,18 +121,17 @@ public class Communication {
     }
 
     public static int firstArchIndexEmpty(RobotController rc) throws GameActionException {
-        if (readArchLoc(rc, 0) != null) {
+        if (readArchLoc(rc, 0) == null) {
             return 0;
-        } else if (readArchLoc(rc, 1) != null) {
+        } else if (readArchLoc(rc, 1) == null) {
             return 1;
-        } else if (readArchLoc(rc, 2) != null) {
+        } else if (readArchLoc(rc, 2) == null) {
             return 2;
-        } else if (readArchLoc(rc, 3) != null) {
+        } else if (readArchLoc(rc, 3) == null) {
             return 3;
+        } else {
+            return -1;
         }
-
-        // if no indexes are empty, return -1
-        return -1;
     }
 
     public static void writeOwnArchLoc(RobotController rc, int index) throws GameActionException {
