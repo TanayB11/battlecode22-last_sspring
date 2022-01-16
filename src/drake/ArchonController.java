@@ -25,6 +25,7 @@ public class ArchonController {
     // can be tuned
     static int initialMinersToSpawn = -1;
     static final int MINER_HEURISTIC_K = 450;
+    static final int ROUNDS_BEFORE_WIPING_TARGET = 40;
 
     public static void runArchon(RobotController rc) throws GameActionException {
         MapLocation me = rc.getLocation();
@@ -109,19 +110,19 @@ public class ArchonController {
             int currentTurn = rc.getRoundNum();
 
             if (rc.readSharedArray(7) != prevEnemySeven) {
-                turnsSeven = currentTurn + 20;
+                turnsSeven = currentTurn + ROUNDS_BEFORE_WIPING_TARGET;
             }
 
             if (rc.readSharedArray(8) != prevEnemyEight) {
-                turnsEight = currentTurn + 20;
+                turnsEight = currentTurn + ROUNDS_BEFORE_WIPING_TARGET;
             }
 
             if (rc.readSharedArray(9) != prevEnemyNine) {
-                turnsNine = currentTurn + 20;
+                turnsNine = currentTurn + ROUNDS_BEFORE_WIPING_TARGET;
             }
 
             if (rc.readSharedArray(10) != prevEnemyTen) {
-                turnsTen = currentTurn + 20;
+                turnsTen = currentTurn + ROUNDS_BEFORE_WIPING_TARGET;
             }
 
             if (currentTurn == turnsSeven) {
