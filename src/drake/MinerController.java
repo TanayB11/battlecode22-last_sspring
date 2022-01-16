@@ -38,8 +38,8 @@ public class MinerController {
         // if the target location has < 2 lead and 0 gold, reset the target
         // this will even reset when we're exploring
         if (
-                targetLoc != null && rc.canSenseLocation(targetLoc) &&
-                        !(rc.senseLead(targetLoc) > 1) && rc.senseGold(targetLoc) == 0
+            targetLoc != null && rc.canSenseLocation(targetLoc) &&
+            !(rc.senseLead(targetLoc) > 1) && rc.senseGold(targetLoc) == 0
         ) {
             targetLoc = null;
         }

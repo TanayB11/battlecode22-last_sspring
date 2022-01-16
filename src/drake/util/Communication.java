@@ -101,7 +101,7 @@ public class Communication {
         return null;
     }
 
-    static int firstArchIndexEmpty(RobotController rc) throws GameActionException {
+    public static int firstArchIndexEmpty(RobotController rc) throws GameActionException {
         if (readArchLoc(rc, 0) != null) {
             return 0;
         } else if (readArchLoc(rc, 1) != null) {
@@ -116,7 +116,7 @@ public class Communication {
         return -1;
     }
 
-    static void writeOwnArchLoc(RobotController rc, int index) throws GameActionException {
+    public static void writeOwnArchLoc(RobotController rc, int index) throws GameActionException {
         MapLocation me = rc.getLocation();
 
         rc.writeSharedArray(index, (me.x << 10) | (me.y << 4));
@@ -124,7 +124,7 @@ public class Communication {
 
     // Section 3: Helper functions
     // no dedicated indices, helps other parts of bot understand / tweak array
-    static void throwFlag(RobotController rc, int index, int bitShift) throws GameActionException {
+    public static void throwFlag(RobotController rc, int index, int bitShift) throws GameActionException {
         rc.writeSharedArray(index, rc.readSharedArray(index) | (1 << bitShift));
     }
 

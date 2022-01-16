@@ -16,27 +16,35 @@ import static drake.util.SafeActions.safeAttack;
 
 
 public class SoldierController {
-    static MapLocation me = null, targetLoc = null, spawnPt = null;
-    static boolean isRetreating = false, isDying = false;
-    static BFS bfs = null;
-    static int prevHP = Integer.MIN_VALUE;
-
     static final int ACCEPTABLE_TARGET_LOC_RUBBLE = 50;
+    // disintegrate if we're dying and this close to our archon
+    static final int MAX_DISINTEGRATION_DISTANCE = 4;
+
+    static BFS bfs = null;
+    static MapLocation me = null, targetLoc = null;
+    static int prevHP = Integer.MIN_VALUE;
+    static boolean isDying = false;
+    static int currTargetingEnemyID = -1; // we're not targeting an enemy
 
     public static void runSoldier(RobotController rc) throws GameActionException {
         me = rc.getLocation();
 
-        // initalize when spawned
+        // spawn init
         if (prevHP == Integer.MIN_VALUE) {
             prevHP = rc.getType().health;
-            spawnPt = new MapLocation(me.x, me.y);
             bfs = new DroidBFS(rc);
         }
 
-        // reports if dying
+        // reports if dying, returns to nearest archon to sacrifice
         if (!isDying && rc.getHealth() < rc.getType().health * 0.2) {
-            writeNumSoldiers(rc, readNumSoldiers(rc) - 1);
+            int soldiersCt = readNumSoldiers(rc);
+            writeNumSoldiers(rc, soldiersCt - 1);
             isDying = true;
+
+            // check if returns null
+            // TODO: uncomment and re-implement findNearestFriendlyArchon
+//            MapLocation nearestArchon = Util.findNearestFriendlyArchon(rc);
+//            targetLoc = nearestArchon;
         }
 
         // if we're at target, reset target
@@ -44,8 +52,16 @@ public class SoldierController {
             targetLoc = null;
         }
 
-        // if we're near our target and see too much rubble, null it
-        if (targetLoc != null && rc.canSenseLocation(targetLoc) && rc.senseRubble(targetLoc) > ACCEPTABLE_TARGET_LOC_RUBBLE) {
+        if (isDying && me.distanceSquaredTo(targetLoc) <= MAX_DISINTEGRATION_DISTANCE) {
+            rc.disintegrate();
+        }
+
+        // if we're near our archon target and see too much rubble on it, null
+        if (
+            targetLoc != null &&
+            rc.canSenseLocation(targetLoc) &&
+            rc.senseRubble(targetLoc) > ACCEPTABLE_TARGET_LOC_RUBBLE
+        ) {
             targetLoc = null;
         }
 
@@ -55,21 +71,31 @@ public class SoldierController {
         }
 
         // sense nearby robots, attack in priority order
-        // TODO: keep tabs on the id of the robot we're attacking, chase it down
+        // TODO (TEST): keep tabs on the id of the robot we're attacking, chase it down
         if (nearbyEnemies.length > 0) {
             Arrays.sort(nearbyEnemies, ATTACK_PRIORITY_COMPARATOR);
-            targetLoc = nearbyEnemies[0].getLocation();
+            RobotInfo targetEnemy = nearbyEnemies[0];
+            if (currTargetingEnemyID != -1) { // already locked onto a target
+                for (RobotInfo enemy : nearbyEnemies) {
+                    if (enemy.getID() == currTargetingEnemyID) {
+                        targetEnemy = enemy;
+                        break;
+                    }
+                }
+            }
+            currTargetingEnemyID = targetEnemy.getID();
+            targetLoc = targetEnemy.getLocation();
             safeAttack(rc, targetLoc);
+         } else {
+            currTargetingEnemyID = -1;
         }
 
         // get target from comms
         if (targetLoc == null) {
-            targetLoc = getTarget(rc);
-            if (targetLoc == null) {
-                // TODO: replace this with a unique soldier exploration method eventually
-                // TODO: this is not an ASAP TODO
-                targetLoc = minerExploreLoc(rc);
-            }
+            // TODO: replace this with a unique soldier exploration method eventually
+            // this is not an ASAP TO-DO
+            MapLocation potentialTarget = getTarget(rc);
+            targetLoc = (potentialTarget != null) ? potentialTarget : minerExploreLoc(rc);
         }
 
         bfs.move(targetLoc);

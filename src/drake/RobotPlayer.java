@@ -23,7 +23,7 @@ public strictfp class RobotPlayer {
             try {
                 switch (rc.getType()) {
                     case ARCHON:
-                        break;
+                        ArchonController.runArchon(rc); break;
                     case MINER:
                         MinerController.runMiner(rc); break;
                     case SOLDIER:
