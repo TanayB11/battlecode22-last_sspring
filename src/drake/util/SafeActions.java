@@ -1,11 +1,16 @@
 package drake.util;
 
-import battlecode.common.Direction;
-import battlecode.common.GameActionException;
-import battlecode.common.MapLocation;
-import battlecode.common.RobotController;
+import battlecode.common.*;
 
 public class SafeActions {
+    public static boolean safeBuild(RobotController rc, RobotType type, Direction dir) throws GameActionException {
+        if (rc.canBuildRobot(type, dir)) {
+            rc.buildRobot(type, dir);
+            return true;
+        }
+        return false;
+    }
+
     public static boolean safeMove(RobotController rc, Direction dir) throws GameActionException {
         if (rc.canMove(dir)) {
             rc.move(dir);

@@ -88,6 +88,10 @@ public class SoldierController {
             safeAttack(rc, targetLoc);
          } else {
             currTargetingEnemyID = -1;
+            // if we're within sight of target and we see no enemies, reset
+            if (targetLoc != null && rc.canSenseLocation(targetLoc)) {
+                targetLoc = null;
+            }
         }
 
         // get target from comms

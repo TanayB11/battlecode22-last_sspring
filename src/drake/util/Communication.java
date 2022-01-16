@@ -124,11 +124,12 @@ public class Communication {
 
     // Section 3: Helper functions
     // no dedicated indices, helps other parts of bot understand / tweak array
+    // TODO: (i think?? not sure) use XOR instead of OR to toggle the flag (so we can reset it for archon soldier rush)
     public static void throwFlag(RobotController rc, int index, int bitShift) throws GameActionException {
         rc.writeSharedArray(index, rc.readSharedArray(index) | (1 << bitShift));
     }
 
-    static boolean checkFlag(RobotController rc, int index, int bitShift) throws GameActionException {
+    public static boolean checkFlag(RobotController rc, int index, int bitShift) throws GameActionException {
         // Return true if flag has been thrown, false otherwise
         if (1 == (rc.readSharedArray(index) & (0 ^ (1 << bitShift))) >> bitShift){
             return true;

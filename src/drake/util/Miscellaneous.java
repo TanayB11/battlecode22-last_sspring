@@ -7,8 +7,11 @@ import battlecode.common.RobotType;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Random;
 
 public class Miscellaneous {
+    public static final Random rng = new Random(314159);
+
     /** Array containing all the possible movement directions. */
     public static final Comparator<RobotInfo> ATTACK_PRIORITY_COMPARATOR = new attackPriorityComparator();
 
