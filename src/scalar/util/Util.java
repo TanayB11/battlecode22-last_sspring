@@ -44,11 +44,11 @@ public class Util {
 
     // Specifies priority order for attacking enemies
     static final List<RobotType> ATTACK_PRIORITY = Arrays.asList(
+            RobotType.SOLDIER, // can't kill archons if we don't kill soldiers defending first
             RobotType.ARCHON,
             RobotType.WATCHTOWER,
             RobotType.SAGE,
             RobotType.BUILDER,
-            RobotType.SOLDIER,
             RobotType.LABORATORY,
             RobotType.MINER
     );
@@ -60,22 +60,46 @@ public class Util {
         }
     }
 
-//    public static void broadcastEnemyArchonLocs(RobotController rc, RobotInfo[] nearbyEnemies) throws GameActionException {
-//        // if we find a nearby archon, report its location
-//        // TODO: track enemy archon health?
-//        for (RobotInfo enemy : nearbyEnemies) {
-//            if (enemy.getType().equals(RobotType.ARCHON)) {
-//                // 10-13 is enemy archon info
-//                for (int commsIndex = 10; commsIndex++ <= 13;) {
-//                    if (rc.readSharedArray(commsIndex) == 0) {
-//                        MapLocation enemyLoc = enemy.getLocation();
-//                        rc.writeSharedArray(commsIndex, enemyLoc.x * 100 + enemyLoc.y);
-//                        break;
-//                    }
-//                }
-//            }
-//        }
-//    }
+    public static MapLocation findNearestFriendlyArchon(RobotController rc) throws GameActionException {
+        MapLocation me = rc.getLocation();
+
+        MapLocation nearestArchon = null;
+        int archonCode = 0, distSqToNearestArchon = Integer.MAX_VALUE;
+
+        for (int commsIndex = 6; commsIndex++ <= 9;) {
+            archonCode = rc.readSharedArray(commsIndex);
+            if (archonCode != 0) {
+                MapLocation currArchon = new MapLocation(archonCode / 100, archonCode % 100);
+                int distSqToCurrArchon = me.distanceSquaredTo(currArchon);
+
+                if (nearestArchon == null) {
+                    nearestArchon = currArchon;
+                } else if (distSqToCurrArchon < distSqToNearestArchon) {
+                    distSqToNearestArchon = distSqToCurrArchon;
+                    nearestArchon = currArchon;
+                }
+            }
+        }
+
+        return nearestArchon;
+    }
+
+    public static void broadcastEnemyArchonLocs(RobotController rc, RobotInfo[] nearbyEnemies) throws GameActionException {
+        // if we find a nearby archon, report its location
+        // TODO: track enemy archon health?
+        for (RobotInfo enemy : nearbyEnemies) {
+            if (enemy.getType().equals(RobotType.ARCHON)) {
+                // 10-13 is enemy archon info
+                for (int commsIndex = 10; commsIndex++ <= 13;) {
+                    if (rc.readSharedArray(commsIndex) == 0) {
+                        MapLocation enemyLoc = enemy.getLocation();
+                        rc.writeSharedArray(commsIndex, enemyLoc.x * 100 + enemyLoc.y);
+                        break;
+                    }
+                }
+            }
+        }
+    }
 
     public static boolean safeMove(RobotController rc, Direction dir) throws GameActionException {
 //        rc.setIndicatorString("Safely trying to move to " + dir.toString());
