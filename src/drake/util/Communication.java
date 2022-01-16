@@ -90,6 +90,7 @@ public class Communication {
         int archonComm = rc.readSharedArray(index);
 
         if (archonComm != 0) {
+            // 1111110000000000
             int archonX = (archonComm & 64512) >> 10;
             int archonY = (archonComm & 1008) >> 4;
 
@@ -124,14 +125,17 @@ public class Communication {
 
     // Section 3: Helper functions
     // no dedicated indices, helps other parts of bot understand / tweak array
-    // TODO: (i think?? not sure) use XOR instead of OR to toggle the flag (so we can reset it for archon soldier rush)
     public static void throwFlag(RobotController rc, int index, int bitShift) throws GameActionException {
         rc.writeSharedArray(index, rc.readSharedArray(index) | (1 << bitShift));
     }
 
+    public static void resetFlag(RobotController rc, int index, int bitShift) throws GameActionException {
+        rc.writeSharedArray(index, rc.readSharedArray(index) & ~(1 << bitShift));
+    }
+
     public static boolean checkFlag(RobotController rc, int index, int bitShift) throws GameActionException {
         // Return true if flag has been thrown, false otherwise
-        if (1 == (rc.readSharedArray(index) & (0 ^ (1 << bitShift))) >> bitShift){
+        if (1 == (rc.readSharedArray(index) & (0 ^ (1 << bitShift))) >> bitShift) {
             return true;
         }
 

@@ -29,10 +29,11 @@ public class ArchonController {
     public static void runArchon(RobotController rc) throws GameActionException {
         MapLocation me = rc.getLocation();
 
-        if (archIndex == -1 || initialMinersToSpawn == -1) { // init values
+        if (archIndex == -1) { // init values
             initialMinersToSpawn = rc.getMapWidth() * rc.getMapHeight() / MINER_HEURISTIC_K;
             archIndex = firstArchIndexEmpty(rc);
-            writeOwnArchLoc(rc, firstArchIndexEmpty(rc));
+            rc.setIndicatorString("HI " + Integer.toString(archIndex) + " " + );
+            writeOwnArchLoc(rc, archIndex);
             if (archIndex == 0) {
                 isAlpha = true;
             }
@@ -64,9 +65,15 @@ public class ArchonController {
         Direction randomSpawnDir = directions[rng.nextInt(directions.length)];
 
         // highest priority is to attack visible enemy archons
-        // TODO: reset flag
+
         boolean adjacentArchonFlag = checkFlag(rc, 0, 0);
-        if (nearbyArchon != null && !adjacentArchonFlag) {
+
+        // resets flag if the neighboring archon is gone
+        if (adjacentArchonFlag && nearbyArchon == null) {
+            resetFlag(rc, 0, 0);
+        }
+
+        if (nearbyArchon != null && adjacentArchonFlag) {
             // check flag to make sure another archon hasn't already set
             alternateSpawnMinerSoldier(rc, me.directionTo(nearbyArchon), numMiners, numSoldiers);
             throwFlag(rc, 0, 0); // throw a flag on 0th archon (comms array index 0)
