@@ -1,7 +1,6 @@
 package phoenix.util;
 
 import battlecode.common.*;
-import phoenix.util.Util;
 
 public abstract class BFS {
     final int BYTECODE_REMAINING = 1000;

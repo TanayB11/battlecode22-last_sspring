@@ -77,7 +77,6 @@ public class Util {
     }
 
     public static boolean safeMove(RobotController rc, Direction dir) throws GameActionException {
-//        rc.setIndicatorString("Safely trying to move to " + dir.toString());
         if (rc.canMove(dir)) {
             rc.move(dir);
             return true;

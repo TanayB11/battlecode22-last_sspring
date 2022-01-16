@@ -2,8 +2,6 @@ package scalar.util;
 
 import battlecode.common.MapLocation;
 
-// TODO: Fix this because it's broken/not ideal.
-// TODO: Potentially rewrite from scratch
 public class mapTracker {
     final static int MAX_MAP_SIZE = 60;
     final static int INT_BITS = 32;
