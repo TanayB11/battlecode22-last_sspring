@@ -8,6 +8,10 @@ import static drake.util.Miscellaneous.rng;
 import static drake.util.SafeActions.safeBuild;
 
 
+// URGENT TODO: Reset things if the alpha archon dies
+// URGENT TODO: fix targeting
+// TODO: if archon is attacked spawn soldiers
+
 // TODO: BUILD ORDER
 // TODO: KILL NEARBY ARCHONS IMMEDIATELY
 // heuristic for # miners before soldier
@@ -106,38 +110,47 @@ public class ArchonController {
         miners = readNumMiners(rc);
         soldiers = readNumSoldiers(rc);
 
+        // URGENT TODO: Reset things if the alpha archon dies
         if (isAlpha) {
             int currentTurn = rc.getRoundNum();
 
             if (rc.readSharedArray(7) != prevEnemySeven) {
+                prevEnemySeven = rc.readSharedArray(7);
                 turnsSeven = currentTurn + ROUNDS_BEFORE_WIPING_TARGET;
             }
 
             if (rc.readSharedArray(8) != prevEnemyEight) {
+                prevEnemyEight = rc.readSharedArray(8);
                 turnsEight = currentTurn + ROUNDS_BEFORE_WIPING_TARGET;
             }
 
             if (rc.readSharedArray(9) != prevEnemyNine) {
+                prevEnemyNine = rc.readSharedArray(9);
                 turnsNine = currentTurn + ROUNDS_BEFORE_WIPING_TARGET;
             }
 
             if (rc.readSharedArray(10) != prevEnemyTen) {
+                prevEnemyTen = rc.readSharedArray(10);
                 turnsTen = currentTurn + ROUNDS_BEFORE_WIPING_TARGET;
             }
 
             if (currentTurn == turnsSeven) {
+                prevEnemySeven = 0;
                 rc.writeSharedArray(7, 0);
             }
 
             if (currentTurn == turnsEight) {
+                prevEnemyEight = 0;
                 rc.writeSharedArray(8, 0);
             }
 
             if (currentTurn == turnsNine) {
+                prevEnemyNine = 0;
                 rc.writeSharedArray(9, 0);
             }
 
             if (currentTurn == turnsTen) {
+                prevEnemyTen = 0;
                 rc.writeSharedArray(10, 0);
             }
         }

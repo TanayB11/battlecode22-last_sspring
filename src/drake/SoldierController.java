@@ -26,6 +26,8 @@ public class SoldierController {
     static boolean isDying = false;
     static int currTargetingEnemyID = -1; // we're not targeting an enemy
 
+    // TODO: erase from array
+
     public static void runSoldier(RobotController rc) throws GameActionException {
         me = rc.getLocation();
 
@@ -112,6 +114,6 @@ public class SoldierController {
         }
 
         bfs.move(targetLoc);
-//        rc.setIndicatorString("TARGET: " + targetLoc.toString());
+        rc.setIndicatorString("TARGET: " + targetLoc.toString());
     }
 }

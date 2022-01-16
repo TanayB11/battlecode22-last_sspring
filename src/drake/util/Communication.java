@@ -234,26 +234,23 @@ public class Communication {
             indexUsed = 10;
         } else {
             // find lowest priority in slots
-            int lowPrio = -1;
             int prioritySeven = (enemySeven & 14) >> 1;
             int priorityEight = (enemyEight & 14) >> 1;
             int priorityNine = (enemyNine & 14) >> 1;
             int priorityTen = (enemyTen & 14) >> 1;
 
             if (prioritySeven < priorityEight && prioritySeven < priorityNine && prioritySeven < priorityTen) {
-                lowPrio = 7;
+                indexUsed = 7;
             } else if (priorityEight < priorityNine && priorityEight < priorityTen) {
-                lowPrio = 8;
+                indexUsed = 8;
             } else if (priorityNine < priorityTen) {
-                lowPrio = 9;
+                indexUsed = 9;
             } else {
-                lowPrio = 10;
-            }
-
-            if (indexUsed != -1 && priority > lowPrio) {
-                writeEnemy(rc, type, locationSpotted, indexUsed);
+                indexUsed = 10;
             }
         }
+
+        writeEnemy(rc, type, locationSpotted, indexUsed);
     }
 
     public static MapLocation getTarget(RobotController rc) throws GameActionException {
