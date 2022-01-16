@@ -4,13 +4,15 @@ import battlecode.common.GameActionException;
 import battlecode.common.MapLocation;
 import battlecode.common.RobotController;
 import battlecode.common.RobotInfo;
+import drake.util.pathfinding.BFS;
+import drake.util.pathfinding.DroidBFS;
 
 import java.util.Arrays;
 
-import static drake.Communication.*;
-import static drake.Exploration.minerExploreLoc;
-import static drake.Miscellaneous.ATTACK_PRIORITY_COMPARATOR;
-import static drake.SafeActions.safeAttack;
+import static drake.util.Communication.*;
+import static drake.util.Exploration.minerExploreLoc;
+import static drake.util.Miscellaneous.ATTACK_PRIORITY_COMPARATOR;
+import static drake.util.SafeActions.safeAttack;
 
 
 public class SoldierController {

@@ -1,8 +1,8 @@
-package drake;
+package drake.util.pathfinding;
 
 import battlecode.common.*;
 
-import static drake.SafeActions.safeMove;
+import static drake.util.SafeActions.safeMove;
 
 public abstract class BFS {
     static final int BYTECODE_REMAINING = 1000;

@@ -1,4 +1,4 @@
-package drake;
+package drake.util;
 
 import battlecode.common.GameActionException;
 import battlecode.common.MapLocation;
@@ -32,7 +32,7 @@ public class Communication {
     // dedicated indices: 4-6
 
     // Section 1a: Reading number of units
-    static int readNumMiners(RobotController rc) throws GameActionException {
+    public static int readNumMiners(RobotController rc) throws GameActionException {
         return (rc.readSharedArray(8) & 65280) >> 8;
     }
 
@@ -44,7 +44,7 @@ public class Communication {
         return (rc.readSharedArray(10) & 65280) >> 8;
     }
 
-    static int readNumSoldiers(RobotController rc) throws GameActionException {
+    public static int readNumSoldiers(RobotController rc) throws GameActionException {
         return rc.readSharedArray(8) & 255;
     }
 
@@ -57,7 +57,7 @@ public class Communication {
     }
 
     // Section 1b: Writing to number of units
-    static void writeNumMiners(RobotController rc, int numUnits)  throws GameActionException {
+    public static void writeNumMiners(RobotController rc, int numUnits)  throws GameActionException {
         rc.writeSharedArray(8, (rc.readSharedArray(8) & ~65280) | (numUnits << 8));
     }
 
@@ -69,7 +69,7 @@ public class Communication {
         rc.writeSharedArray(10, (rc.readSharedArray(10) & ~65280) | (numUnits << 8));
     }
 
-    static void writeNumSoldiers(RobotController rc, int numUnits) throws GameActionException {
+    public static void writeNumSoldiers(RobotController rc, int numUnits) throws GameActionException {
         rc.writeSharedArray(8, (rc.readSharedArray(8) & ~255) | numUnits);
     }
 
@@ -178,7 +178,7 @@ public class Communication {
         return null;
     }
 
-    static void reportEnemy(RobotController rc, RobotType type, MapLocation locationSpotted) throws GameActionException {
+    public static void reportEnemy(RobotController rc, RobotType type, MapLocation locationSpotted) throws GameActionException {
         int indexUsed = -1;
         int priority = 0;
         int enemySeven = rc.readSharedArray(7);
@@ -234,7 +234,7 @@ public class Communication {
         }
     }
 
-    static MapLocation getTarget(RobotController rc) throws GameActionException {
+    public static MapLocation getTarget(RobotController rc) throws GameActionException {
         // returns null if array has no targets
 
         int enemySeven = rc.readSharedArray(7);

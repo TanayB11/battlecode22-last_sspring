@@ -1,14 +1,16 @@
 package drake;
 
 import battlecode.common.*;
+import drake.util.pathfinding.BFS;
+import drake.util.pathfinding.DroidBFS;
 
 import java.util.Arrays;
 import java.util.Comparator;
 
-import static drake.Communication.*;
-import static drake.Exploration.minerExploreLoc;
-import static drake.SafeActions.safeMine;
-import static drake.SafeActions.safeMove;
+import static drake.util.Communication.*;
+import static drake.util.Exploration.minerExploreLoc;
+import static drake.util.SafeActions.safeMine;
+import static drake.util.SafeActions.safeMove;
 
 public class MinerController {
     static MapLocation me = null, targetLoc = null, spawnPt = null;

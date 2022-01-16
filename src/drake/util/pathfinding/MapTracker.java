@@ -1,4 +1,4 @@
-package drake;
+package drake.util.pathfinding;
 
 import battlecode.common.MapLocation;
 

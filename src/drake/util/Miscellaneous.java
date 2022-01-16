@@ -1,4 +1,4 @@
-package drake;
+package drake.util;
 
 import battlecode.common.Direction;
 import battlecode.common.RobotInfo;

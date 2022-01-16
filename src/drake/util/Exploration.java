@@ -1,4 +1,4 @@
-package drake;
+package drake.util;
 
 import battlecode.common.GameActionException;
 import battlecode.common.MapLocation;

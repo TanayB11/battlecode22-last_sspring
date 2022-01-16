@@ -1,4 +1,4 @@
-package drake;
+package drake.util;
 
 import battlecode.common.Direction;
 import battlecode.common.GameActionException;
@@ -19,7 +19,7 @@ public class SafeActions {
         while (rc.canMineLead(mineLocation) && rc.senseLead(mineLocation) > 1) { rc.mineLead(mineLocation); }
     }
 
-    static void safeAttack(RobotController rc, MapLocation attackLocation) throws GameActionException {
+    public static void safeAttack(RobotController rc, MapLocation attackLocation) throws GameActionException {
         if (rc.canAttack(attackLocation)) {
             rc.attack(attackLocation);
         }
