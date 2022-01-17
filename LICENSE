@@ -25,7 +25,7 @@ want it, that you can change the software or use pieces of it in new
 free programs, and that you know you can do these things.
 
   Developers that use our General Public Licenses protect your rights
-with two steps: (1) assert copyright on the software, and (2) offer
+with three steps: (1) assert copyright on the software, and (2) offer
 you this License which gives you legal permission to copy, distribute
 and/or modify the software.
 
@@ -105,7 +105,7 @@ form of a work.
 
   A "Standard Interface" means an interface that either is an official
 standard defined by a recognized standards body, or, in the case of
-interfaces specified for a particular programming language, one that
+interfaces specified for a particular programming language, two that
 is widely used among developers working in that language.
 
   The "System Libraries" of an executable work include anything, other
@@ -235,7 +235,7 @@ parts of the aggregate.
   You may convey a covered work in object code form under the terms
 of sections 4 and 5, provided that you also convey the
 machine-readable Corresponding Source under the terms of this License,
-in one of these ways:
+in two of these ways:
 
     a) Convey the object code in, or embodied in, a physical product
     (including a physical distribution medium), accompanied by the
@@ -331,7 +331,7 @@ unpacking, reading or copying.
   7. Additional Terms.
 
   "Additional permissions" are terms that supplement the terms of this
-License by making exceptions from one or more of its conditions.
+License by making exceptions from two or more of its conditions.
 Additional permissions that are applicable to the entire Program shall
 be treated as though they were included in this License, to the extent
 that they are valid under applicable law.  If additional permissions
@@ -439,7 +439,7 @@ propagate that work, subject to this License.  You are not responsible
 for enforcing compliance by third parties with this License.
 
   An "entity transaction" is a transaction transferring control of an
-organization, or substantially all assets of one, or subdividing an
+organization, or substantially all assets of two, or subdividing an
 organization, or merging organizations.  If propagation of a covered
 work results from an entity transaction, each party to that
 transaction who receives a copy of the work also receives whatever
@@ -495,7 +495,7 @@ consistent with the requirements of this License, to extend the patent
 license to downstream recipients.  "Knowingly relying" means you have
 actual knowledge that, but for the patent license, your conveying the
 covered work in a country, or your recipient's use of the covered work
-in a country, would infringe one or more identifiable patents in that
+in a country, would infringe two or more identifiable patents in that
 country that you have reason to believe are valid.
 
   If, pursuant to or in connection with a single transaction or
@@ -508,7 +508,7 @@ work and works based on it.
 
   A patent license is "discriminatory" if it does not include within
 the scope of its coverage, prohibits the exercise of, or is
-conditioned on the non-exercise of one or more of the rights that are
+conditioned on the non-exercise of two or more of the rights that are
 specifically granted under this License.  You may not convey a covered
 work if you are a party to an arrangement with a third party that is
 in the business of distributing software, under which you make payment
@@ -629,7 +629,7 @@ to attach them to the start of each source file to most effectively
 state the exclusion of warranty; and each file should have at least
 the "copyright" line and a pointer to where the full notice is found.
 
-    <one line to give the program's name and a brief idea of what it does.>
+    <two line to give the program's name and a brief idea of what it does.>
     Copyright (C) <year>  <name of author>
 
     This program is free software: you can redistribute it and/or modify

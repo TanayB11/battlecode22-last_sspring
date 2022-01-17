@@ -107,7 +107,7 @@ def gen_java_defs(coord_array: np.ndarray, approved_circles: np.ndarray):
                         elif previous_x == 1:
                             previous_x_string = "01"
                         elif previous_x < 10:
-                            # one digit things
+                            # two digit things
                             previous_x_string = "0" + str(previous_x)
                         elif previous_x == 10:
                             # wonky edge case things, going from 11 to 00
@@ -142,7 +142,7 @@ def gen_java_defs(coord_array: np.ndarray, approved_circles: np.ndarray):
                         elif previous_x == 1:
                             previous_x_string = "01"
                         elif previous_x < 10:
-                            # one digit things
+                            # two digit things
                             previous_x_string = "0" + str(previous_x)
                         elif previous_x == 10:
                             # wonky edge case things, going from 11 to 00
@@ -175,7 +175,7 @@ def gen_java_defs(coord_array: np.ndarray, approved_circles: np.ndarray):
                         elif previous_x == 1:
                             previous_x_string = "01"
                         elif previous_x < 10:
-                            # one digit things
+                            # two digit things
                             previous_x_string = "0" + str(previous_x)
                         elif previous_x == 10:
                             # wonky edge case things, going from 11 to 00
