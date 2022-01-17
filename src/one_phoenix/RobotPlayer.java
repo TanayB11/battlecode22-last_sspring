@@ -1,4 +1,4 @@
-package one;
+package one_phoenix;
 
 import battlecode.common.Clock;
 import battlecode.common.GameActionException;

@@ -1,4 +1,4 @@
-package one.util;
+package one_phoenix.util;
 
 import battlecode.common.*;
 

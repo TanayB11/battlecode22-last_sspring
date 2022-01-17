@@ -1,9 +1,9 @@
-package one;
+package one_phoenix;
 
 import battlecode.common.*;
-import one.util.BFS;
-import one.util.DroidBFS;
-import one.util.Util;
+import one_phoenix.util.BFS;
+import one_phoenix.util.DroidBFS;
+import one_phoenix.util.Util;
 
 import java.util.Arrays;
 

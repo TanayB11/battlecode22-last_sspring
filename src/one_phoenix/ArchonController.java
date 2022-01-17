@@ -1,6 +1,6 @@
-package one;
+package one_phoenix;
 import battlecode.common.*;
-import one.util.Util;
+import one_phoenix.util.Util;
 
 public class ArchonController {
     static final int MINERS_PER_ARCHON = 12;
