@@ -9,7 +9,8 @@ import static three.util.SafeActions.safeBuild;
 
 
 // TODO: if archon is attacked spawn soldiers (needs fixing)
-    // can use a flag
+
+// TODO: take into account all visible lead for miner spawn
 
 // heuristic for # miners before soldier
 // spawn X miners / archon (based on heuristic), consistently send soldiers, ~~then if lead production is decreasing/miners dying spawn more~~
@@ -22,7 +23,6 @@ public class ArchonController {
     static boolean isAlpha = false;
     static int prevEnemySeven = 0, prevEnemyEight = 0, prevEnemyNine = 0, prevEnemyTen = 0, turnsSeven = 0, turnsEight = 0, turnsNine = 0, turnsTen = 0;
     static int soldierMinerBuildAlternator = 0; // don't need this when we implement build queue
-    static int prevHP = Integer.MIN_VALUE;
 
     // can be tuned
     // TODO: test different heuristics
@@ -34,7 +34,7 @@ public class ArchonController {
         MapLocation me = rc.getLocation();
 
         if (archIndex == -1) { // init values
-            initialMinersToSpawn = rc.getMapWidth() * rc.getMapHeight() / MINER_HEURISTIC_K;
+            initialMinersToSpawn = rc.getMapWidth() * rc.getMapHeight() / MINER_HEURISTIC_K * rc.getArchonCount();
             archIndex = firstArchIndexEmpty(rc);
             writeOwnArchLoc(rc, archIndex);
             if (archIndex == 0) {
@@ -43,12 +43,7 @@ public class ArchonController {
         }
 
         // if we see an archon, soldier rush
-        // NOTE for later: getTarget() -> returns null if no target
-        // DONE: report enemies
-        // DONE: throw flag to divert all resources to this archon
-            // DONE: set 0th archon flag on least significant (0th) bit
-            // DONE: spawn direction for soldiers (rc.directionto(archon))
-            // DONE: check if flag set, then don't spawn resources if we're not the flagged archon
+            // NOTE for later: getTarget() -> returns null if no target
         int numMiners = readNumMiners(rc);
         int numSoldiers = readNumSoldiers(rc);
 
@@ -60,12 +55,9 @@ public class ArchonController {
                 reportEnemy(rc, nearbyEnemies[i].getType(), nearbyEnemies[i].getLocation());
             }
 
-            if (rc.getHealth() < prevHP) {
-                // spawn soldiers
-                prevHP = rc.getHealth();
-                if (safeBuild(rc, RobotType.SOLDIER, me.directionTo(nearbyEnemies[0].getLocation()))) {
-                    writeNumSoldiers(rc, numSoldiers + 1);
-                }
+            // TODO: test
+            if (safeBuild(rc, RobotType.SOLDIER, me.directionTo(nearbyEnemies[0].getLocation()))) {
+                writeNumSoldiers(rc, numSoldiers + 1);
             }
         }
 
@@ -80,7 +72,6 @@ public class ArchonController {
         Direction randomSpawnDir = directions[rng.nextInt(directions.length)];
 
         // highest priority is to attack visible enemy archons
-
         boolean adjacentArchonFlag = checkFlag(rc, 0, 0);
 
         // resets flag if the neighboring archon is gone
