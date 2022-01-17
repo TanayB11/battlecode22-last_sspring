@@ -22,7 +22,7 @@ public class MinerController {
     static void runMiner(RobotController rc) throws GameActionException {
         me = rc.getLocation();
 
-        // init on spawn
+        // init on spawn :)
         if (prevHP == Integer.MIN_VALUE) {
             prevHP = rc.getType().health;
             spawnPt = new MapLocation(me.x, me.y);
