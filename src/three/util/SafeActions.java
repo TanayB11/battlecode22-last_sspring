@@ -24,9 +24,11 @@ public class SafeActions {
         while (rc.canMineLead(mineLocation) && rc.senseLead(mineLocation) > 1) { rc.mineLead(mineLocation); }
     }
 
-    public static void safeAttack(RobotController rc, MapLocation attackLocation) throws GameActionException {
+    public static boolean safeAttack(RobotController rc, MapLocation attackLocation) throws GameActionException {
         if (rc.canAttack(attackLocation)) {
             rc.attack(attackLocation);
+            return true;
         }
+        return false;
     }
 }

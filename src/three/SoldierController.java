@@ -1,9 +1,6 @@
 package three;
 
-import battlecode.common.GameActionException;
-import battlecode.common.MapLocation;
-import battlecode.common.RobotController;
-import battlecode.common.RobotInfo;
+import battlecode.common.*;
 import three.util.pathfinding.BFS;
 import three.util.pathfinding.DroidBFS;
 
@@ -13,6 +10,7 @@ import static three.util.Communication.*;
 import static three.util.Exploration.minerExploreLoc;
 import static three.util.Miscellaneous.ATTACK_PRIORITY_COMPARATOR;
 import static three.util.SafeActions.safeAttack;
+import static three.util.SafeActions.safeMove;
 
 
 public class SoldierController {
@@ -38,7 +36,7 @@ public class SoldierController {
             bfs = new DroidBFS(rc);
         }
 
-        // reports if dying, returns to nearest archon to sacrifice
+        // TODO: reports if dying, returns to nearest archon to GET HEALED
         if (!isDying && rc.getHealth() < rc.getType().health * 0.2) {
             int soldiersCt = readNumSoldiers(rc);
             writeNumSoldiers(rc, soldiersCt - 1);
@@ -55,6 +53,7 @@ public class SoldierController {
             targetLoc = null;
         }
 
+        // TODO: replace with healing
         if (isDying && me.distanceSquaredTo(targetLoc) <= MAX_DISINTEGRATION_DISTANCE) {
             rc.disintegrate();
         }
@@ -71,6 +70,7 @@ public class SoldierController {
         RobotInfo[] nearbyEnemies = rc.senseNearbyRobots(-1, rc.getTeam().opponent());
         if (nearbyEnemies.length > 0) {
             for (int i = 0; i < nearbyEnemies.length; i++) {
+                // TODO: also prioritize based on health
                 reportEnemy(rc, nearbyEnemies[i].getType(), nearbyEnemies[i].getLocation());
             }
         }
@@ -90,7 +90,13 @@ public class SoldierController {
             }
             currTargetingEnemyID = targetEnemy.getID();
             targetLoc = targetEnemy.getLocation();
-            safeAttack(rc, targetLoc);
+            RobotType enemType = targetEnemy.getType();
+
+            boolean wantToRetreat = enemType != RobotType.MINER && enemType != RobotType.LABORATORY;
+
+            if (!safeAttack(rc, targetLoc) && wantToRetreat) { // move out of enemy range
+                safeMove(rc, me.directionTo(targetLoc).opposite());
+            }
          } else {
             currTargetingEnemyID = -1;
             // if we're within sight of target and we see no enemies, reset
