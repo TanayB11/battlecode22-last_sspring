@@ -3,156 +3,134 @@ package three;
 import battlecode.common.*;
 
 import static three.util.Communication.*;
-import static three.util.Miscellaneous.directions;
-import static three.util.Miscellaneous.rng;
+import static three.util.Miscellaneous.*;
 import static three.util.SafeActions.safeBuild;
 
 
-// TODO: if archon is attacked spawn soldiers (needs fixing)
-
+// TODO: attack enemy archon if within sight, divert resources
+// TODO: if archon is attacked spawn soldiers
 // TODO: take into account all visible lead for miner spawn
-
-// heuristic for # miners before soldier
-// spawn X miners / archon (based on heuristic), consistently send soldiers, ~~then if lead production is decreasing/miners dying spawn more~~
-    // if there 2x soldiers than miners, alternate b/t miner and 2 soldiers
-// TODO: if we have a target, we should send a soldier closest to that target
-// TODO: build queue with linkedlist/array and bitshifts
+// TODO: if we have a target, we should send a soldier closest to that target (use archon distances)
+// TODO: use getTarget() for sensing nearby archon?
+// TODO: test different heuristics
 
 public class ArchonController {
-    static int archIndex = -1, miners = 0, soldiers = 0;
-    static boolean isAlpha = false;
-    static int prevEnemySeven = 0, prevEnemyEight = 0, prevEnemyNine = 0, prevEnemyTen = 0, turnsSeven = 0, turnsEight = 0, turnsNine = 0, turnsTen = 0;
-    static int soldierMinerBuildAlternator = 0; // don't need this when we implement build queue
+    static boolean isAlpha = false, isPrioritySpawner = false;
+    static boolean underAttack = false;
+    static int prevHP = Integer.MIN_VALUE;
+
+    static int buildPhase = -1; // 0 initial miners, 1 soldiers, 2 extra miners
+    static int archIndex = -1;
+    static int prevTarget = 0, turnsSinceEnemyEstablished = 0;
+    static int soldierMinerBuildAlternator = 0;
+
+    // determining miner spawn dirs
+    static int initialMinersToSpawn = -1;
+    static int totalLead = -1, currSpawnDir = 0;
+    static int[] minersInDir = {0, 0, 0, 0, 0, 0, 0, 0};
 
     // can be tuned
-    // TODO: test different heuristics
-    static int initialMinersToSpawn = -1;
     static final int MINER_HEURISTIC_K = 450;
     static final int ROUNDS_BEFORE_WIPING_TARGET = 40;
+    static final int BASE_MINERS = 3;
 
     public static void runArchon(RobotController rc) throws GameActionException {
         MapLocation me = rc.getLocation();
 
-        if (archIndex == -1) { // init values
-            initialMinersToSpawn = rc.getMapWidth() * rc.getMapHeight() / MINER_HEURISTIC_K * rc.getArchonCount();
+        if (archIndex == -1) { // initialize
             archIndex = firstArchIndexEmpty(rc);
             writeOwnArchLoc(rc, archIndex);
-            if (archIndex == 0) {
-                isAlpha = true;
-            }
+            prevHP = rc.getHealth();
+            isAlpha = (archIndex == 0);
+            buildPhase = 0;
         }
 
         // if we see an archon, soldier rush
-            // NOTE for later: getTarget() -> returns null if no target
         int numMiners = readNumMiners(rc);
         int numSoldiers = readNumSoldiers(rc);
 
-        MapLocation nearbyArchon = null;
         RobotInfo[] nearbyEnemies = rc.senseNearbyRobots(-1, rc.getTeam().opponent());
-
+        RobotInfo priorityEnemy = null;
         if (nearbyEnemies.length > 0) {
-            for (int i = 0; i < nearbyEnemies.length; i++) {
-                reportEnemy(rc, nearbyEnemies[i].getType(), nearbyEnemies[i].getLocation());
+            for (RobotInfo enemy : nearbyEnemies) {
+                RobotType enemType = enemy.getType();
+                // for archons, we care if enemy archons are nearby
+                if (enemy.getType().equals(RobotType.ARCHON)) {
+                    priorityEnemy = enemy;
+                    break;
+                } else if (priorityEnemy == null ||
+                        getReportEnemyPriority(enemType) > getReportEnemyPriority(priorityEnemy.getType())
+                ) {
+                    priorityEnemy = enemy;
+                }
             }
+            reportEnemy(rc, priorityEnemy.getType(), priorityEnemy.getLocation());
+        }
 
-            // TODO: test
-            if (safeBuild(rc, RobotType.SOLDIER, me.directionTo(nearbyEnemies[0].getLocation()))) {
+        isPrioritySpawner = rc.getHealth() < prevHP ||
+            priorityEnemy != null && priorityEnemy.getType().equals(RobotType.ARCHON);
+
+        if (isPrioritySpawner) {
+            throwFlag(rc, 0, 0);
+            Direction dirToBuild = (priorityEnemy != null) ?
+                    me.directionTo(priorityEnemy.getLocation()) : directions[rng.nextInt(directions.length)];
+            if (safeBuild(rc, RobotType.SOLDIER, dirToBuild)) {
                 writeNumSoldiers(rc, numSoldiers + 1);
             }
-        }
-
-        for (RobotInfo enemy : nearbyEnemies) {
-            if (enemy.getType().equals(RobotType.ARCHON)) {
-                nearbyArchon = enemy.getLocation();
-                break;
-            }
-        }
-
-        // determine build order
-        Direction randomSpawnDir = directions[rng.nextInt(directions.length)];
-
-        // highest priority is to attack visible enemy archons
-        boolean adjacentArchonFlag = checkFlag(rc, 0, 0);
-
-        // resets flag if the neighboring archon is gone
-        if (adjacentArchonFlag && nearbyArchon == null) {
+            prevHP = rc.getHealth();
+        } else {
             resetFlag(rc, 0, 0);
         }
 
-        if (nearbyArchon != null && adjacentArchonFlag) {
-            // check flag to make sure another archon hasn't already set
-            alternateSpawnMinerSoldier(rc, me.directionTo(nearbyArchon), numMiners, numSoldiers);
-            throwFlag(rc, 0, 0); // throw a flag on 0th archon (comms array index 0)
-        } else if (numMiners < initialMinersToSpawn && !adjacentArchonFlag) {
-            if (safeBuild(rc, RobotType.MINER, randomSpawnDir)) {
-                writeNumMiners(rc, numMiners + 1);
+        // does one of our archons have an enemy archon nearby?
+        boolean enemArchFlag = checkFlag(rc, 0, 0);
+        boolean allowedToSpawn = !enemArchFlag || isPrioritySpawner;
+
+        if (buildPhase == 0 && allowedToSpawn) { // init miners
+            rc.setIndicatorString("IN PHASE 0");
+            if (totalLead == -1) { initMinerSpawns(rc, me); }
+
+            if (minersInDir[currSpawnDir] > 0) {
+//                System.out.println(rc.getID() + " " + currSpawnDir +" " + minersInDir[currSpawnDir]);
+                if (safeBuild(rc, RobotType.MINER, directions[currSpawnDir])) {
+                    writeNumMiners(rc, numMiners + 1);
+                    minersInDir[currSpawnDir]--;
+                }
+            } else {
+                currSpawnDir++;
             }
-        } else if (!adjacentArchonFlag) {
-            // build soldiers unless...
-            // if we sense a nearby archon or have enough soldiers
-            if (numSoldiers < 2*numMiners) {
+
+            if (currSpawnDir == 7) {
+                buildPhase++;
+            }
+        } else if (buildPhase == 1 && allowedToSpawn && rc.getRoundNum()%rc.getArchonCount()==archIndex) { // soldiers
+            // TODO: COMPLETELY REWRITE
+            rc.setIndicatorString("IN PHASE 1");
+            if (numSoldiers < 2*numMiners && numMiners > BASE_MINERS * rc.getArchonCount()) {
+                Direction randomSpawnDir = directions[rng.nextInt(directions.length)];
                 // TODO: make smart spawn direction for soldiers
                 if (safeBuild(rc, RobotType.SOLDIER, randomSpawnDir)) {
                     writeNumSoldiers(rc, numSoldiers + 1);
                 }
-            } else {
-                alternateSpawnMinerSoldier(rc, randomSpawnDir, numMiners, numSoldiers);
+            } else if (safeBuild(rc, RobotType.MINER, directions[rng.nextInt(directions.length)])) {
+                writeNumMiners(rc, numMiners + 1);
             }
         }
 
-        if (rc.getHealth() <= 60) {
-            throwFlag(rc, archIndex, 3);
-        }
+        if (rc.getHealth() <= 60) { throwFlag(rc, archIndex, 3); }
 
-        int archons = rc.getArchonCount();
-        miners = readNumMiners(rc);
-        soldiers = readNumSoldiers(rc);
-
-        // URGENT TODO: Reset things if the alpha archon dies
         if (isAlpha) {
             alphaSendHeartbeat(rc);
-
             int currentTurn = rc.getRoundNum();
-
-            if (rc.readSharedArray(7) != prevEnemySeven) {
-                prevEnemySeven = rc.readSharedArray(7);
-                turnsSeven = currentTurn + ROUNDS_BEFORE_WIPING_TARGET;
+            if (rc.readSharedArray(7) != prevTarget) {
+                prevTarget = rc.readSharedArray(7);
+                turnsSinceEnemyEstablished = currentTurn + ROUNDS_BEFORE_WIPING_TARGET;
             }
-
-            if (rc.readSharedArray(8) != prevEnemyEight) {
-                prevEnemyEight = rc.readSharedArray(8);
-                turnsEight = currentTurn + ROUNDS_BEFORE_WIPING_TARGET;
-            }
-
-            if (rc.readSharedArray(9) != prevEnemyNine) {
-                prevEnemyNine = rc.readSharedArray(9);
-                turnsNine = currentTurn + ROUNDS_BEFORE_WIPING_TARGET;
-            }
-
-            if (rc.readSharedArray(10) != prevEnemyTen) {
-                prevEnemyTen = rc.readSharedArray(10);
-                turnsTen = currentTurn + ROUNDS_BEFORE_WIPING_TARGET;
-            }
-
-            if (currentTurn == turnsSeven) {
-                prevEnemySeven = 0;
+            if (currentTurn == turnsSinceEnemyEstablished) {
+                prevTarget = 0;
                 rc.writeSharedArray(7, 0);
             }
 
-            if (currentTurn == turnsEight) {
-                prevEnemyEight = 0;
-                rc.writeSharedArray(8, 0);
-            }
-
-            if (currentTurn == turnsNine) {
-                prevEnemyNine = 0;
-                rc.writeSharedArray(9, 0);
-            }
-
-            if (currentTurn == turnsTen) {
-                prevEnemyTen = 0;
-                rc.writeSharedArray(10, 0);
-            }
         } else { // check that the alpha is pinging
             int alphaPing = listenAlphaHeartbeat(rc);
             int roundNum = rc.getRoundNum();
@@ -160,6 +138,34 @@ public class ArchonController {
                 clearIndex(rc, archIndex);
                 writeOwnArchLoc(rc, 0);
             }
+        }
+    }
+
+    private static void initMinerSpawns(RobotController rc, MapLocation me) throws GameActionException {
+        totalLead = 0;
+        int leadAtLoc;
+        MapLocation[] nearbyLeadLocs = rc.senseNearbyLocationsWithLead();
+        for (MapLocation loc : nearbyLeadLocs) {
+            leadAtLoc = rc.senseLead(loc);
+            totalLead += leadAtLoc;
+            minersInDir[dirToIndex(me, loc)] += leadAtLoc;
+        }
+
+        // set heuristic
+        initialMinersToSpawn = rc.getMapHeight() * rc.getMapWidth() * totalLead / 52500;
+
+        // leadInDir becomes miners to spawn in each direction
+        // send # of miners in each dir proportional to amt of lead
+        if (totalLead != 0) {
+            for (int i = 0; i < minersInDir.length; i++) {
+                if (minersInDir[i] != 0) {
+                    minersInDir[i] = 1 + initialMinersToSpawn * minersInDir[i] / totalLead;
+//                    System.out.println(rc.getID() + " " + i + " " + minersInDir[i] + " " + totalLead);
+                }
+            }
+        } else {
+            initialMinersToSpawn = BASE_MINERS;
+            minersInDir[0] = initialMinersToSpawn;
         }
     }
 

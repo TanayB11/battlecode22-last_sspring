@@ -18,7 +18,7 @@ public strictfp class RobotPlayer {
     public static void run(RobotController rc) throws GameActionException {
         while (true) {
             turnCount += 1;  // We have now been alive for one more turn!
-            System.out.println("Age: " + turnCount + "; Location: " + rc.getLocation());
+//            System.out.println("Age: " + turnCount + "; Location: " + rc.getLocation());
 
             try {
                 switch (rc.getType()) {
