@@ -86,10 +86,18 @@ public class SoldierController {
             for (int i = 0; i < nearbyEnemies.length; i++) {
                 currentEnemy = nearbyEnemies[i];
 
-                if (getReportEnemyPriority(currentEnemy.getType()) > getReportEnemyPriority(targetEnemy.getType())) {
+                if (getAttackEnemyPriority(currentEnemy.getType()) > getAttackEnemyPriority(targetEnemy.getType())) {
                     targetEnemy = currentEnemy;
-                } else if (getReportEnemyPriority(currentEnemy.getType()) == getReportEnemyPriority(targetEnemy.getType())) {
-                    if (targetEnemy.getHealth() > currentEnemy.getHealth()) {
+                } else if (getAttackEnemyPriority(currentEnemy.getType()) == getAttackEnemyPriority(targetEnemy.getType())) {
+                    if (currentEnemy.getType() == RobotType.WATCHTOWER && targetEnemy.getType() == RobotType.SOLDIER) {
+                        if (currentEnemy.getHealth() * 3/4 <= targetEnemy.getHealth()) {
+                            targetEnemy = currentEnemy;
+                        }
+                    } else if (targetEnemy.getType() == RobotType.WATCHTOWER && currentEnemy.getType() == RobotType.SOLDIER) {
+                        if (targetEnemy.getHealth() * 3/4 <= currentEnemy.getHealth()) {
+                            targetEnemy = currentEnemy;
+                        }
+                    } else if (targetEnemy.getHealth() > currentEnemy.getHealth()) {
                         targetEnemy = currentEnemy;
                     }
                 }
@@ -109,7 +117,7 @@ public class SoldierController {
             RobotType enemType = targetEnemy.getType();
             wantToContinue = (numNearbyAllies >= NUM_ALLIES_TO_BE_SURROUNDED &&
                     rc.senseRubble(me) <= ACCEPTABLE_PAUSE_LOC_RUBBLE) ||
-                    (enemType == RobotType.MINER && enemType == RobotType.LABORATORY);
+                    (enemType == RobotType.ARCHON && enemType == RobotType.MINER && enemType == RobotType.LABORATORY);
 
             // retreat temporarily if we can't attack
             if (!safeAttack(rc, targetLoc) && !wantToContinue) {

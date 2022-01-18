@@ -161,6 +161,20 @@ public class Communication {
         }
     }
 
+    public static int getAttackEnemyPriority(RobotType type) {
+        switch (type) {
+            case LABORATORY: return 0;
+            case MINER: return 1;
+            case BUILDER: return 2;
+            case ARCHON: return 3;
+            case SOLDIER:
+            case WATCHTOWER:
+                return 4;
+            case SAGE: return 5;
+            default: return -1;
+        }
+    }
+
     public static MapLocation getTarget(RobotController rc) throws GameActionException {
         int enemyComm = rc.readSharedArray(7);
         if (enemyComm != 0) {
