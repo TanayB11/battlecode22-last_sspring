@@ -13,6 +13,8 @@ import java.util.Random;
 public class Miscellaneous {
     public static final Random rng = new Random(3141592);
 
+    public static final Comparator<RobotInfo> ATTACK_PRIORITY_COMPARATOR = new attackPriorityComparator();
+
     public static final Direction[] directions = {
             Direction.NORTH,
             Direction.NORTHEAST,

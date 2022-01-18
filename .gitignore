@@ -1,6 +1,8 @@
 .java-version
 env/
 
+*_copy
+
 dist/*
 build/*
 

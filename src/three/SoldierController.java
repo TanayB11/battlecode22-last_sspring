@@ -13,19 +13,23 @@ import static three.util.SafeActions.safeAttack;
 import static three.util.SafeActions.safeMove;
 
 
+// TODO: use a unique soldier exploration method eventually
+// TODO: swap disintegration for healing (if worth it)
+// TODO: check that targetLoc should always have a value
+    // update reportEnemy
+
 public class SoldierController {
     static final int ACCEPTABLE_TARGET_LOC_RUBBLE = 50;
-    // disintegrate if we're dying and this close to our archon
-    static final int MAX_DISINTEGRATION_DISTANCE = 4;
+    static final int ACCEPTABLE_PAUSE_LOC_RUBBLE = 25;
+    static final int MAX_DISINTEGRATION_DISTANCE = 4; // disintegrate if dying + this close to our archon
+    static final int NUM_ALLIES_TO_BE_SURROUNDED = 8;
 
     static BFS bfs = null;
-    static MapLocation me = null, targetLoc = null;
-    static int prevHP = Integer.MIN_VALUE;
     static boolean isDying = false;
-    static int currTargetingEnemyID = -1; // we're not targeting an enemy
-
-    // TODO: make sure there aren't too many soldiers near the target
-        //  (we can go for multiple places at once with a ton of soldiers)
+    static int prevHP = Integer.MIN_VALUE;
+    static MapLocation me = null, targetLoc = null;
+    static int currTargetingEnemyID = -1; // not targeting an enemy
+    static boolean wantToContinue = true; // don't retreat
 
     public static void runSoldier(RobotController rc) throws GameActionException {
         me = rc.getLocation();
@@ -36,7 +40,7 @@ public class SoldierController {
             bfs = new DroidBFS(rc);
         }
 
-        // TODO: reports if dying, returns to nearest archon to GET HEALED
+        // if we're on low hp, consider retreating to heal (if it's worth)
         if (!isDying && rc.getHealth() < rc.getType().health * 0.2) {
             int soldiersCt = readNumSoldiers(rc);
             writeNumSoldiers(rc, soldiersCt - 1);
@@ -53,12 +57,12 @@ public class SoldierController {
             targetLoc = null;
         }
 
-        // TODO: check that targetLoc should always have a value
+        // TODO: replace with healing
         if (targetLoc != null && isDying && me.distanceSquaredTo(targetLoc) <= MAX_DISINTEGRATION_DISTANCE) {
             rc.disintegrate();
         }
 
-        // if we're near our archon target and see too much rubble on it, null
+        // avoid an exploration target being a high rubble square
         if (
             targetLoc != null &&
             rc.canSenseLocation(targetLoc) &&
@@ -67,34 +71,48 @@ public class SoldierController {
             targetLoc = null;
         }
 
+        // report nearby enemies
         RobotInfo[] nearbyEnemies = rc.senseNearbyRobots(-1, rc.getTeam().opponent());
         if (nearbyEnemies.length > 0) {
             for (int i = 0; i < nearbyEnemies.length; i++) {
-                // TODO: also prioritize based on health
                 reportEnemy(rc, nearbyEnemies[i].getType(), nearbyEnemies[i].getLocation());
             }
         }
 
-        // sense nearby robots, attack in priority order
-        // TODO (TEST): keep tabs on the id of the robot we're attacking, chase it down
+        // sense nearby robots, attack in priority order (even while heading to target)
         if (nearbyEnemies.length > 0) {
-            Arrays.sort(nearbyEnemies, ATTACK_PRIORITY_COMPARATOR);
+            RobotInfo currentEnemy = nearbyEnemies[0];
             RobotInfo targetEnemy = nearbyEnemies[0];
-            if (currTargetingEnemyID != -1) { // already locked onto a target
-                for (RobotInfo enemy : nearbyEnemies) {
-                    if (enemy.getID() == currTargetingEnemyID) {
-                        targetEnemy = enemy;
-                        break;
+            for (int i = 0; i < nearbyEnemies.length; i++) {
+                currentEnemy = nearbyEnemies[i];
+
+                if (getReportEnemyPriority(currentEnemy.getType()) > getReportEnemyPriority(targetEnemy.getType())) {
+                    targetEnemy = currentEnemy;
+                } else if (getReportEnemyPriority(currentEnemy.getType()) == getReportEnemyPriority(targetEnemy.getType())) {
+                    if (targetEnemy.getHealth() > currentEnemy.getHealth()) {
+                        targetEnemy = currentEnemy;
                     }
                 }
             }
+
+            // get nearby friendlies (advance if we have friendlies with us)
+            RobotInfo[] nearbyAllies = rc.senseNearbyRobots(-1, rc.getTeam());
+            int numNearbyAllies = 0;
+            for (RobotInfo ally : nearbyAllies) {
+                if (ally.getType().equals(RobotType.SOLDIER)) {
+                    numNearbyAllies++;
+                }
+            }
+
             currTargetingEnemyID = targetEnemy.getID();
             targetLoc = targetEnemy.getLocation();
             RobotType enemType = targetEnemy.getType();
+            wantToContinue = (numNearbyAllies >= NUM_ALLIES_TO_BE_SURROUNDED &&
+                    rc.senseRubble(me) <= ACCEPTABLE_PAUSE_LOC_RUBBLE) ||
+                    (enemType == RobotType.MINER && enemType == RobotType.LABORATORY);
 
-            boolean wantToRetreat = enemType != RobotType.MINER && enemType != RobotType.LABORATORY;
-
-            if (!safeAttack(rc, targetLoc) && wantToRetreat) { // move out of enemy range
+            // retreat temporarily if we can't attack
+            if (!safeAttack(rc, targetLoc) && !wantToContinue) {
                 safeMove(rc, me.directionTo(targetLoc).opposite());
             }
          } else {
@@ -107,13 +125,15 @@ public class SoldierController {
 
         // get target from comms
         if (targetLoc == null) {
-            // TODO: replace this with a unique soldier exploration method eventually
-            // this is not an ASAP TO-DO
             MapLocation potentialTarget = getTarget(rc);
             targetLoc = (potentialTarget != null) ? potentialTarget : minerExploreLoc(rc);
         }
 
-        bfs.move(targetLoc);
+        // if we can attack enemy and are not on rubble, don't move closer
+        if (!rc.canAttack(targetLoc) || !wantToContinue) {
+            bfs.move(targetLoc);
+        }
+
         rc.setIndicatorString("TARGET: " + targetLoc.toString());
     }
 }
