@@ -26,6 +26,10 @@ public class Communication {
     1. Enemy report - reportEnemy
     2. Return highest priority enemy - getEnemy
     2. Writes enemy - writeEnemy
+
+    Alpha archon heartbeat:
+    1. Send a ping to say the alpha archon is alive
+    2. Detect the alpha archon ping
      */
 
     // Section 1: Number of droids / buildings
@@ -33,11 +37,6 @@ public class Communication {
 
     // Section 1a: Reading number of units
     public static int readNumMiners(RobotController rc) throws GameActionException {
-        // 65280 comes from (255 << 8), and 255 comes from 11111111
-        // xxxxxxxxyyyyyyyy
-        // 1111111100000000 = 65280_10
-        // xxxxxxxx00000000
-        // xxxxxxxx
         return (rc.readSharedArray(4) & 65280) >> 8;
     }
 
@@ -50,10 +49,6 @@ public class Communication {
     }
 
     public static int readNumSoldiers(RobotController rc) throws GameActionException {
-//        System.out.println("TESTING READ: " + Integer.toString(rc.readSharedArray(4) & ~(255 << 8)));
-        // 00000000yyyyyyyy
-        // 0000000011111111
-        // 255 >> 8
         return rc.readSharedArray(4) & ~(255 << 8);
     }
 
@@ -67,11 +62,6 @@ public class Communication {
 
     // Section 1b: Writing to number of units
     public static void writeNumMiners(RobotController rc, int numUnits)  throws GameActionException {
-        // xxxxxxxxyyyyyyyy
-        // 0000000011111111
-        // 00000000yyyyyyyy
-        // zzzzzzzz00000000
-        // zzzzzzzzyyyyyyyy
         rc.writeSharedArray(4, (rc.readSharedArray(4) & ~65280) | (numUnits << 8));
     }
 
@@ -100,23 +90,12 @@ public class Communication {
 
     // Section 2a: Reading / Setting Locations
     static MapLocation readArchLoc(RobotController rc, int index) throws GameActionException {
-        // return null if no archon found
         int archonComm = rc.readSharedArray(index);
-
         if (archonComm != 0) {
-            // xxxxxxyyyyyyzzzz
-            // 1111110000000000 = 64512
-            // 0000001111110000 = 1008
-            // xxxxxxyyyyyyzzzz
-
             int archonX = (archonComm & 64512) >> 10;
             int archonY = (archonComm & 1008) >> 4;
-
-            MapLocation archonLocation = new MapLocation(archonX, archonY);
-
-            return archonLocation;
+            return new MapLocation(archonX, archonY);
         }
-
         return null;
     }
 
@@ -129,16 +108,15 @@ public class Communication {
             return 2;
         } else if (readArchLoc(rc, 3) == null) {
             return 3;
-        } else {
-            return -1;
         }
+        return -1;
     }
 
     public static void writeOwnArchLoc(RobotController rc, int index) throws GameActionException {
         MapLocation me = rc.getLocation();
-
         rc.writeSharedArray(index, (me.x << 10) | (me.y << 4));
     }
+
 
     // Section 3: Helper functions
     // no dedicated indices, helps other parts of bot understand / tweak array
@@ -155,7 +133,6 @@ public class Communication {
         if (1 == (rc.readSharedArray(index) & (0 ^ (1 << bitShift))) >> bitShift) {
             return true;
         }
-
         return false;
     }
 
@@ -164,122 +141,50 @@ public class Communication {
     }
 
     // Section 4: Targeting helpers
-    // dedicated indices 7-10
-    static void writeEnemy(RobotController rc, RobotType type, MapLocation locationSpotted, int index) throws GameActionException {
-        int numWritten = (locationSpotted.x << 10) | (locationSpotted.y << 4);
-        int priority = 0;
-
-        priority = getReportEnemyPriority(type);
-
-        rc.writeSharedArray(index, (numWritten & ~14) | (priority << 1));
+    // dedicated index 7
+    static void writeEnemy(RobotController rc, RobotType type, MapLocation locationSpotted) throws GameActionException {
+        int locCode = (locationSpotted.x << 10) | (locationSpotted.y << 4);
+        int priority = getReportEnemyPriority(type);
+        rc.writeSharedArray(7, (locCode & ~14) | (priority << 1));
     }
 
-    private static int getReportEnemyPriority(RobotType type) {
-        if (type.equals(RobotType.MINER)) {
-            return 0;
-        } else if (type.equals(RobotType.SOLDIER)) {
-            return 1;
-        } else if (type.equals(RobotType.BUILDER)) {
-            return 2;
-        } else if (type.equals(RobotType.SAGE)) {
-            return 3;
-        } else if (type.equals(RobotType.WATCHTOWER)) {
-            return 4;
-        } else if (type.equals(RobotType.LABORATORY)) {
-            return 5;
-        } else if (type.equals(RobotType.ARCHON)) {
-            return 6;
+    public static int getReportEnemyPriority(RobotType type) {
+        switch (type) {
+            case MINER:         return 0;
+            case SOLDIER:       return 1;
+            case BUILDER:       return 2;
+            case SAGE:          return 3;
+            case WATCHTOWER:    return 4;
+            case LABORATORY:    return 5;
+            case ARCHON:        return 6;
+            default:            return -1;
         }
-        return -1;
     }
 
-    static MapLocation readEnemyLoc(RobotController rc, int index) throws GameActionException {
-        // return null if no archon found
-        int enemyComm = rc.readSharedArray(index);
-
+    public static MapLocation getTarget(RobotController rc) throws GameActionException {
+        int enemyComm = rc.readSharedArray(7);
         if (enemyComm != 0) {
             int archonX = (enemyComm & 64512) >> 10;
             int archonY = (enemyComm & 1008) >> 4;
-
-            MapLocation enemyLocation = new MapLocation(archonX, archonY);
-
-            return enemyLocation;
+            return new MapLocation(archonX, archonY);
         }
-
         return null;
     }
 
     public static void reportEnemy(RobotController rc, RobotType type, MapLocation locationSpotted) throws GameActionException {
-        int indexUsed = -1;
-        int enemySeven = rc.readSharedArray(7);
-        int enemyEight = rc.readSharedArray(8);
-        int enemyNine = rc.readSharedArray(9);
-        int enemyTen = rc.readSharedArray(10);
-
-        if (enemySeven == 0) {
-            indexUsed = 7;
-        } else if (enemyEight == 0) {
-            indexUsed = 8;
-        } else if (enemyNine == 0) {
-            indexUsed = 9;
-        } else if (enemyTen == 0) {
-            indexUsed = 10;
-        } else {
-            // find lowest priority in slots
-            int prioritySeven = (enemySeven & 14) >> 1;
-            int priorityEight = (enemyEight & 14) >> 1;
-            int priorityNine = (enemyNine & 14) >> 1;
-            int priorityTen = (enemyTen & 14) >> 1;
-
-            if (prioritySeven < priorityEight && prioritySeven < priorityNine && prioritySeven < priorityTen) {
-                indexUsed = 7;
-            } else if (priorityEight < priorityNine && priorityEight < priorityTen) {
-                indexUsed = 8;
-            } else if (priorityNine < priorityTen) {
-                indexUsed = 9;
-            } else {
-                indexUsed = 10;
-            }
-        }
-
-        writeEnemy(rc, type, locationSpotted, indexUsed);
-    }
-
-    public static MapLocation getTarget(RobotController rc) throws GameActionException {
-        // returns null if array has no targets
-
-        int enemySeven = rc.readSharedArray(7);
-        int enemyEight = rc.readSharedArray(8);
-        int enemyNine = rc.readSharedArray(9);
-        int enemyTen = rc.readSharedArray(10);
-
-        if (enemySeven == 0 && enemyEight == 0 && enemyNine == 0 && enemyTen == 0) {
-            return null;
-        }
-
-        int prioritySeven = (enemySeven & 14) >> 1;
-        int priorityEight = (enemyEight & 14) >> 1;
-        int priorityNine = (enemyNine & 14) >> 1;
-        int priorityTen = (enemyTen & 14) >> 1;
-
-        if (prioritySeven > priorityEight && prioritySeven > priorityNine && prioritySeven > priorityTen) {
-            return readEnemyLoc(rc, 7);
-        } else if (priorityEight > priorityNine && priorityEight > priorityTen) {
-            return readEnemyLoc(rc, 8);
-        } else if (priorityNine > priorityTen) {
-            return readEnemyLoc(rc, 9);
-        } else {
-            // priorityTen is largest
-            return readEnemyLoc(rc, 10);
+        int currEnemyPriority = (rc.readSharedArray(7)) & 14 >> 1;
+        if (currEnemyPriority == 0 || currEnemyPriority < getReportEnemyPriority(type)) {
+            writeEnemy(rc, type, locationSpotted);
         }
     }
 
+    // Section 5: Alpha archon heartbeat
     // alpha archon pings w/ round num if it's alive
     public static void alphaSendHeartbeat(RobotController rc) throws GameActionException {
-        rc.writeSharedArray(11, rc.getRoundNum());
+        rc.writeSharedArray(8, rc.getRoundNum());
     }
 
     public static int listenAlphaHeartbeat(RobotController rc) throws GameActionException {
-        return rc.readSharedArray(11);
+        return rc.readSharedArray(8);
     }
 }

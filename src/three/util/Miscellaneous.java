@@ -1,6 +1,7 @@
 package three.util;
 
 import battlecode.common.Direction;
+import battlecode.common.MapLocation;
 import battlecode.common.RobotInfo;
 import battlecode.common.RobotType;
 
@@ -23,8 +24,19 @@ public class Miscellaneous {
             Direction.NORTHWEST,
     };
 
-    /** Array containing all the possible movement directions. */
-    public static final Comparator<RobotInfo> ATTACK_PRIORITY_COMPARATOR = new attackPriorityComparator();
+    public static int dirToIndex(MapLocation l1, MapLocation l2) {
+        switch (l1.directionTo(l2)){
+            case NORTH:        return 0;
+            case NORTHEAST:    return 1;
+            case EAST:         return 2;
+            case SOUTHEAST:    return 3;
+            case SOUTH:        return 4;
+            case SOUTHWEST:    return 5;
+            case WEST:         return 6;
+            case NORTHWEST:    return 7;
+            default:           return -1;
+        }
+    }
 
     // Specifies priority order for attacking enemies
     static final List<RobotType> ATTACK_PRIORITY = Arrays.asList(

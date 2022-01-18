@@ -53,8 +53,8 @@ public class SoldierController {
             targetLoc = null;
         }
 
-        // TODO: replace with healing
-        if (isDying && me.distanceSquaredTo(targetLoc) <= MAX_DISINTEGRATION_DISTANCE) {
+        // TODO: check that targetLoc should always have a value
+        if (targetLoc != null && isDying && me.distanceSquaredTo(targetLoc) <= MAX_DISINTEGRATION_DISTANCE) {
             rc.disintegrate();
         }
 
