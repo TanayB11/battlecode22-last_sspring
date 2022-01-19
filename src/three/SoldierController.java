@@ -6,8 +6,8 @@ import three.util.pathfinding.DroidBFS;
 
 import java.util.Arrays;
 
+import static four.util.Exploration.soldierExploreLoc;
 import static three.util.Communication.*;
-import static three.util.Exploration.minerExploreLoc;
 import static three.util.Miscellaneous.ATTACK_PRIORITY_COMPARATOR;
 import static three.util.SafeActions.safeAttack;
 import static three.util.SafeActions.safeMove;
@@ -135,7 +135,7 @@ public class SoldierController {
         // get target from comms
         if (targetLoc == null) {
             MapLocation potentialTarget = getTarget(rc);
-            targetLoc = (potentialTarget != null) ? potentialTarget : minerExploreLoc(rc);
+            targetLoc = (potentialTarget != null) ? potentialTarget : soldierExploreLoc(rc);
         }
 
         // if we can attack enemy and are not on rubble, don't move closer
