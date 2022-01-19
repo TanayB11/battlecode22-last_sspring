@@ -4,12 +4,11 @@ import battlecode.common.*;
 import four.util.pathfinding.BFS;
 import four.util.pathfinding.DroidBFS;
 
-import java.awt.*;
 import java.util.Arrays;
 import java.util.Comparator;
 
 import static four.util.Communication.*;
-import static four.util.Exploration.minerExploreLoc;
+import static four.util.Exploration.soldierExploreLoc;
 import static four.util.Miscellaneous.*;
 import static four.util.SafeActions.safeMove;
 
@@ -74,7 +73,7 @@ public class SoldierController {
             goal = commsGoal;
             isExploring = false;
         } else {
-            goal = commsGoal != null ? commsGoal : minerExploreLoc(rc);
+            goal = commsGoal != null ? commsGoal : soldierExploreLoc(rc);
             isExploring = (commsGoal == null);
         }
 
