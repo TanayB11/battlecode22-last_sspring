@@ -29,10 +29,11 @@ This is the Battlecode 2022 scaffold, containing an `examplefuncsplayer`. Read h
 ### Useful Commands
 
 - `./gradlew run`
-    Runs a game with the settings in gradle.properties
+    Runs a game with the settings in gradle`.properties
 - `./gradlew update`
     Update to the newest version! Run every so often
 
 ### Acknowledgements
 - [XSquare for BFS pathfinding](https://github.com/IvanGeffner/battlecode2021/tree/master/thirtyone)
 - [Teh Devs for Greedy BugNav](https://github.com/battlecode/battlecode22-lectureplayer/tree/main/src/lectureplayer)
+- [printf for allowing us to ~~steal~~ borrow their entire soldier micro <3 (we love you)](https://discord.com/channels/386965718572466197/401058232346345473/932583881784328242)

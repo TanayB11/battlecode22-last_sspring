@@ -152,7 +152,7 @@ public class ArchonController {
         }
 
         // set heuristic
-        initialMinersToSpawn = rc.getMapHeight() * rc.getMapWidth() * totalLead / 52500;
+        initialMinersToSpawn = Math.min(4, rc.getMapHeight() * rc.getMapWidth() * totalLead / 52500);
 
         // leadInDir becomes miners to spawn in each direction
         // send # of miners in each dir proportional to amt of lead
