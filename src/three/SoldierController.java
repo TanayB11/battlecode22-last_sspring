@@ -64,8 +64,7 @@ public class SoldierController {
 
         // avoid an exploration target being a high rubble square
         if (
-            targetLoc != null &&
-            rc.canSenseLocation(targetLoc) &&
+            targetLoc != null && rc.canSenseLocation(targetLoc) &&
             rc.senseRubble(targetLoc) > ACCEPTABLE_TARGET_LOC_RUBBLE
         ) {
             targetLoc = null;
@@ -115,7 +114,9 @@ public class SoldierController {
             currTargetingEnemyID = targetEnemy.getID();
             targetLoc = targetEnemy.getLocation();
             RobotType enemType = targetEnemy.getType();
-            wantToContinue = (numNearbyAllies >= NUM_ALLIES_TO_BE_SURROUNDED &&
+            wantToContinue = // do we want to continue if target is in range
+                    rc.senseRubble(me.add(me.directionTo(targetLoc))) <= ACCEPTABLE_TARGET_LOC_RUBBLE && // TODO: test
+                    (numNearbyAllies >= NUM_ALLIES_TO_BE_SURROUNDED &&
                     rc.senseRubble(me) <= ACCEPTABLE_PAUSE_LOC_RUBBLE) ||
                     (enemType == RobotType.ARCHON && enemType == RobotType.MINER && enemType == RobotType.LABORATORY);
 
@@ -138,7 +139,7 @@ public class SoldierController {
         }
 
         // if we can attack enemy and are not on rubble, don't move closer
-        if (!rc.canAttack(targetLoc) || !wantToContinue) {
+        if (!rc.canAttack(targetLoc) || wantToContinue) {
             bfs.move(targetLoc);
         }
 
