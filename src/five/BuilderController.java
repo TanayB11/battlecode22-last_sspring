@@ -68,23 +68,29 @@ public class BuilderController {
         //Edge cases: Archon against a wall or corner
 
         //First lab location if one hasn't already been set yet and this is Builder #1
+        MapLocation initTarget = null;
+
         if (RobotID == 1 && target == null) {
 
             if (distToNorthWall >= distToSouthWall && distToSouthWall > 0) {
-                target = new MapLocation(homeArchonLoc.x, 0);
+                initTarget = new MapLocation(homeArchonLoc.x, 0);
+                target = initTarget;
             } else if (distToSouthWall >= distToNorthWall && distToNorthWall > 0) {
-                target = new MapLocation(homeArchonLoc.x, rc.getMapHeight());
+                initTarget = new MapLocation(homeArchonLoc.x, rc.getMapHeight());
+                target = initTarget;
             }
         }
 
         // Second lab location if one hasn't already been set yet and this is Builder #2
 
-        else if (RobotID == 2) {
+        else if (RobotID == 2 && target == null) {
 
             if (distToWestWall >= distToEastWall && distToEastWall > 0) {
-                target = new MapLocation(rc.getMapWidth(), homeArchonLoc.y);
+                initTarget = new MapLocation(rc.getMapWidth(), homeArchonLoc.y);
+                target = initTarget;
             } else if (distToEastWall >= distToWestWall && distToWestWall > 0) {
-                target = new MapLocation(0, homeArchonLoc.y);
+                initTarget = new MapLocation(0, homeArchonLoc.y);
+                target = initTarget;
             }
         }
 
@@ -92,15 +98,14 @@ public class BuilderController {
         //set goals to whatever our adjusted location is
 
         bfs = new DroidBFS(rc);
-
         Direction dirAdjustedLab = null;
 
-        if ((RobotID == 1 || RobotID == 2)&& wantMoreLabs) {
+        if ((RobotID == 1 || RobotID == 2)) {
             bfs.move(target);
 
-
             //search around once in area
-            if (rc.getLocation().equals(target)) {
+            //NOTE: ONLY TARGET = initialTARGET
+            if (rc.getLocation().equals(initTarget)) {
 
                 //Once we're there, check the area for a new target with lower rubble
                 //TODO: Hope this doesn't break because some spots out of bounds?
@@ -112,7 +117,7 @@ public class BuilderController {
                 //determine spot with lowest rubble by swapping
                 for (MapLocation rubbleLoc : rubbleinArea) {
                     if (rc.senseRubble(lowestRubble) > rc.senseRubble(rubbleLoc)) {
-                        lowestRubble =  rubbleLoc;
+                        lowestRubble = rubbleLoc;
                     }
                 }
 
@@ -130,6 +135,11 @@ public class BuilderController {
                 //dirAdjustedLab = rc.getLocation().directionTo().PriorityOneAdjusted.opposite();
             }
 
+        }
+
+        //Reset target to null after one builder is done
+        if (rc.getLocation().equals(target)) {
+            target = null;
         }
 
         //get opposite direction for building so we don't build off the map
