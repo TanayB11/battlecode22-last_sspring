@@ -7,12 +7,13 @@ import five.util.pathfinding.BFS;
 import five.util.pathfinding.DroidBFS;
 
 public class BuilderController {
-    static MapLocation Archon = null;
+
     static BFS bfs = null;
     static boolean wantMoreLabs = false;
     static MapLocation target = null;
     static MapLocation homeArchonLoc = null;
     static MapLocation[] rubbleinArea = null;
+    static boolean isEnemiesNear;
 
     static void runBuilder(RobotController rc) throws GameActionException {
 
@@ -96,12 +97,13 @@ public class BuilderController {
 
         if ((RobotID == 1 || RobotID == 2)&& wantMoreLabs) {
             bfs.move(target);
-            boolean isEnemiesNear;
+
 
             //search around once in area
             if (rc.getLocation().equals(target)) {
 
                 //Once we're there, check the area for a new target with lower rubble
+                //TODO: Hope this doesn't break because some spots out of bounds?
                 rubbleinArea = rc.getAllLocationsWithinRadiusSquared(rc.getLocation(), -1);
 
                 //This is a temporary MapLocation that will change in the for loop
@@ -130,7 +132,7 @@ public class BuilderController {
 
         }
 
-        //get opposite direction so we don't build off the map
+        //get opposite direction for building so we don't build off the map
 
         dirAdjustedLab = homeArchonLoc.directionTo(target).opposite();
 
