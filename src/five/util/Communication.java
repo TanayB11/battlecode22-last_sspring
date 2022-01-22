@@ -89,7 +89,7 @@ public class Communication {
     // dedicated indices: 0-3
 
     // Section 2a: Reading / Setting Locations
-    static MapLocation readArchLoc(RobotController rc, int index) throws GameActionException {
+    public static MapLocation readArchLoc(RobotController rc, int index) throws GameActionException {
         int archonComm = rc.readSharedArray(index);
         if (archonComm != 0) {
             int archonX = (archonComm & 64512) >> 10;
@@ -200,4 +200,7 @@ public class Communication {
     public static int readLeadRequestedForBuildings(RobotController rc) throws GameActionException {
         return rc.readSharedArray(9);
     }
+
+    // Section 7: Build order
+    // Builders tell the archons to save up lead
 }

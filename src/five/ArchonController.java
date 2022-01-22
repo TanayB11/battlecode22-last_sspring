@@ -6,6 +6,7 @@ import static five.util.Communication.*;
 import static five.util.Miscellaneous.*;
 import static five.util.SafeActions.safeBuild;
 
+// TODO: check all array indices
 // TODO: test different heuristics
 
 public class ArchonController {
@@ -29,10 +30,12 @@ public class ArchonController {
     static int visibleLead = -1;
     static int currMinerSpawnDir = 0;
     static int[] minersInDir = {0, 0, 0, 0, 0, 0, 0, 0};
+    static Direction dirToGoal = null;
 
     // regularly resetting comms array goal
     static final int ROUNDS_BEFORE_WIPING_GOAL = 40;
-    static int prevGoal = 0;
+    static MapLocation prevGoal = null;
+    static MapLocation goal = null;
     static int goalExpiryDate = 0;
 
     public static void runArchon(RobotController rc) throws GameActionException {
@@ -77,6 +80,7 @@ public class ArchonController {
         isPrioritySpawner = rc.getHealth() < prevHP ||
             (priorityEnemy != null && priorityEnemy.getType().equals(RobotType.ARCHON));
 
+        // Spawns towards enemies
         if (isPrioritySpawner) {
             throwFlag(rc, 0, 0);
             prevHP = rc.getHealth(); // update prevHP
@@ -104,17 +108,36 @@ public class ArchonController {
         */
 
         // cannot spawn if another archon is currently priority spawner
+        goal = getGoal(rc);
         boolean enemArchFlag = checkFlag(rc, 0, 0);
-        boolean allowedToSpawn = !enemArchFlag || isPrioritySpawner; // TODO: use
 
         // 1. Build order implementation
 
-        // TODO: replace with smart spawn (from archon closest to target or explore)
-        Direction soldierSpawnDir = directions[rng.nextInt(directions.length)];
+        // Decide which archon to spawn from
+        // If there's a goal, spawn from the archon closest to goal, else spawn from a random archon
+        int spawningArch = 0;
+        if (goal != null) {
+            int nearestDist = Integer.MAX_VALUE;
+            int currDist;
+            dirToGoal = me.directionTo(goal);
+            for (int i = 0; i < rc.getArchonCount(); i++) {
+                currDist = me.distanceSquaredTo(readArchLoc(rc, i));
+                if (currDist < nearestDist) {
+                    nearestDist = currDist;
+                    spawningArch = i;
+                }
+            }
+        } else {
+            spawningArch = rng.nextInt(3);
+            dirToGoal = null;
+        }
+
+        boolean allowedToSpawn = (archIndex == spawningArch) && (!enemArchFlag || isPrioritySpawner);
+        Direction smartSpawnDir = (goal != null) ? dirToGoal : directions[rng.nextInt(directions.length)];
 
         // Spawn initial miners
         // proportional to visible lead in each direction
-        if (numMiners < initMiners || initMiners == -1) {
+        if (allowedToSpawn && (numMiners < initMiners || initMiners == -1)) {
             initVisibleLeadAndMinersInDir(rc, me);
 
             // set heuristic
@@ -125,9 +148,9 @@ public class ArchonController {
             } else {
                 spawnMinersToLead(rc, MIN_MINERS);
             }
-        } else if (safeBuild(rc, RobotType.SOLDIER, soldierSpawnDir)) {
+        } else if (allowedToSpawn && safeBuild(rc, RobotType.SOLDIER, smartSpawnDir)) {
             writeNumSoldiers(rc, numSoldiers + 1);
-        } else if (numSoldiers / numMiners < 2) {
+        } else if (allowedToSpawn && (numSoldiers / numMiners < 2)) {
             // spawn additional miners to meet econ needs
                 // definitions
                 // a = \frac{1}{m} * \frac{1}{10} * \sum_{t-9}^t \mathrm{Pb}(t)
@@ -142,8 +165,17 @@ public class ArchonController {
             if (visibleLead > 0) {
                 spawnMinersToLead(rc, minersToSpawn);
             }
-        } else {
-            // TODO: spawn builders and sages
+        } else if (allowedToSpawn) {
+            if (safeBuild(rc, RobotType.SAGE, smartSpawnDir)) {
+                writeNumSages(rc, readNumSages(rc) + 1);
+            } else {
+                int numBuilders = readNumBuilders(rc);
+                if (numBuilders < 3) {
+                    if (safeBuild(rc, RobotType.BUILDER, smartSpawnDir)) {
+                        writeNumBuilders(rc, numBuilders + 1);
+                    }
+                }
+            }
         }
 
         // 2. Regularly wipe goal in comms array, send/check heartbeat
@@ -157,14 +189,14 @@ public class ArchonController {
             prevTurnLead = income;
 
             // if the comms goal has updated
-            if (rc.readSharedArray(7) != prevGoal) {
-                prevGoal = rc.readSharedArray(7);
+            if (!goal.equals(prevGoal)) {
+                prevGoal = goal;
                 goalExpiryDate = currentTurn + ROUNDS_BEFORE_WIPING_GOAL;
             }
             // if comms goal has expired
             if (currentTurn == goalExpiryDate) {
-                prevGoal = 0;
-                rc.writeSharedArray(7, 0);
+                prevGoal = null;
+                clearIndex(rc, 7);
             }
         } else { // check that the alpha is pinging
             int alphaPing = listenAlphaHeartbeat(rc);
