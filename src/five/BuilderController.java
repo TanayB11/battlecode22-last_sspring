@@ -18,14 +18,14 @@ public class BuilderController {
         //Send robot ID to the comms array for unique identification.
         //TODO: replace placeholder based on COMMS:
 
-        int RobotID;
+        int RobotID = 0;
 
         RobotInfo[] nearbyRobots = rc.senseNearbyRobots(rc.getLocation(), -1, rc.getTeam());
 
         //Get Archon Location if one is not already existed
         if (homeArchonLoc.equals(null)) {
 
-            for (RobotInfo Robot: nearbyRobots) {
+            for (RobotInfo Robot : nearbyRobots) {
 
                 if (Robot.getType() == RobotType.ARCHON) {
 
@@ -41,9 +41,8 @@ public class BuilderController {
         //1 = Archon should save lead for a single lab, else not.
         //Read array when possible to save bytecode
 
-        if (rc.readSharedArray(10) == 1) { }
-
-        else if (wantMoreLabs) {
+        if (rc.readSharedArray(10) == 1) {
+        } else if (wantMoreLabs) {
             rc.writeSharedArray(10, 1);
         }
         //Decide where we want them to move towards.
@@ -67,25 +66,24 @@ public class BuilderController {
         //Edge cases: Archon against a wall or corner
 
         //First lab location if one hasn't already been set yet and this is Builder #1
-         if (RobotID == 1 && target == null){
+        if (RobotID == 1 && target == null) {
 
             if (distToNorthWall >= distToSouthWall && distToSouthWall > 0) {
-                target = new MapLocation (homeArchonLoc.x, 0);
-            }
-            else if (distToSouthWall >= distToNorthWall && distToNorthWall > 0) {
-                target = new MapLocation (homeArchonLoc.x, rc.getMapHeight());
+                target = new MapLocation(homeArchonLoc.x, 0);
+            } else if (distToSouthWall >= distToNorthWall && distToNorthWall > 0) {
+                target = new MapLocation(homeArchonLoc.x, rc.getMapHeight());
             }
         }
-        //Second lab location if one hasn't already been set yet and this is Builder #2
+        // Second lab location if one hasn't already been set yet and this is Builder #2
+        // TODO: Target needs to be updated in more cases, like if target = north side
         else if (RobotID == 2 && target == null) {
 
-             if (distToWestWall >= distToEastWall && distToEastWall > 0) {
-                 target = new MapLocation(rc.getMapWidth(), homeArchonLoc.y);
-             }
-             else if (distToEastWall >= distToWestWall && distToWestWall > 0) {
-                 target = new MapLocation(0, homeArchonLoc.y);
-             }
-         }
+            if (distToWestWall >= distToEastWall && distToEastWall > 0) {
+                target = new MapLocation(rc.getMapWidth(), homeArchonLoc.y);
+            } else if (distToEastWall >= distToWestWall && distToWestWall > 0) {
+                target = new MapLocation(0, homeArchonLoc.y);
+            }
+        }
 
         //Initialize and move to priority spot
         //TODO: actually search the spot once there to make sure its not high rubble;
@@ -96,71 +94,49 @@ public class BuilderController {
 
         Direction dirAdjustedLab = null;
 
-        if (BuilderCount == 1 && wantMoreLabs){
-            bfs.move(dirLabPriorityOne);
+        if (RobotID == 1 && wantMoreLabs) {
+            bfs.move(target);
             //search around once in area
 
-        boolean isEnemiesNear;
+            boolean isEnemiesNear;
 
-        RobotInfo[] nearbyEnemies = rc.senseNearbyRobots(-1, rc.getTeam().opponent());
-
-        if (RobotID == 1 && wantMoreLabs){
+            if ((RobotID == 1 || RobotID == 2) && wantMoreLabs) {
                 bfs.move(target);
             }
 
             if (rc.getLocation().equals(target)) {
                 //Once we're there, check the area for a new target with lower rubble
 
+                if (nearbyEnemies != null) {
+                    isEnemiesNear = true;
+                    //TODO: Send a flag
+                } else {
+                    isEnemiesNear = false;
+
+                }
+                //dirAdjustedLab = rc.getLocation().directionTo().PriorityOneAdjusted.opposite();
             }
-        }
-
-        //dirAdjustedLab = rc.getLocation().directionTo().PriorityOneAdjusted.opposite();
-        else if (BuilderCount == 2 && wantMoreLabs){
-            bfs.move(dirLabPriorityTwo);
-            //search around once in area
-
-        if (BuilderCount == 2 && wantMoreLabs){
-        bfs.move(target);
-        //search around once in area
-    }
-
-            if (rc.getLocation().equals(target)) {
-        //Once we're there, check the area for a new target with lower rubble
-
-        if (nearbyEnemies != null)
-        {
-            isEnemiesNear = true;
-            //TODO: Send a flag
-        }
-        else
-        {
-            isEnemiesNear = false;
 
         }
-        //dirAdjustedLab = rc.getLocation().directionTo().PriorityOneAdjusted.opposite();
-
-
-        if ()
-
-    }
         //get opposite direction so we don't build off the map
-    //TODO: adjust diAdjustedLab to account for rubble
-        dirAdjustedLab = Archon.directionTo().target.opposite();
+        dirAdjustedLab = homeArchonLoc.directionTo(target).opposite();
+
+        //TODO: adjust diAdjustedLab to account for rubble
+
+        dirAdjustedLab = homeArchonLoc.directionTo(target).opposite();
 
 
-        if (rc.getLocation() == safeBuild(rc, RobotType.LABORATORY, dirAdjustedLab) && wantMoreLabs);
+        if (safeBuild(rc, RobotType.LABORATORY, dirAdjustedLab) && wantMoreLabs) ;
         {
             rc.buildRobot(RobotType.LABORATORY, dirAdjustedLab);
         }
 
         //Repair labs only
-        RobotInfo [] ListofNearbyRobots = rc.senseNearbyRobots(-1, rc.getTeam());
+        RobotInfo[] ListofNearbyRobots = rc.senseNearbyRobots(-1, rc.getTeam());
 
         //Check if any of those robots are repairable and if we can repair the same lab multiple times
-        for (RobotInfo Robot : ListofNearbyRobots)
-        {
-            if (rc.canRepair(Robot.getLocation()) && Robot.getType() == RobotType.LABORATORY)
-            {
+        for (RobotInfo Robot : ListofNearbyRobots) {
+            if (rc.canRepair(Robot.getLocation()) && Robot.getType() == RobotType.LABORATORY) {
                 rc.repair(Robot.getLocation());
             }
 
@@ -177,4 +153,5 @@ public class BuilderController {
         }*/
 
     }
+}
 
