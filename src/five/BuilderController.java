@@ -14,22 +14,18 @@ public class BuilderController {
     static MapLocation homeArchonLoc = null;
 
     static void runBuilder(RobotController rc) throws GameActionException {
-        BuilderCount++;
-
-
-        //TODO: Get Archon Location
-        me = ;
 
         //Send robot ID to the comms array for unique identification.
+        //TODO: replace placeholder based on COMMS:
 
-        //TODO: replace placeholder:
         int RobotID;
-        RobotInfo[] nearbyArchon = rc.senseNearbyRobots(rc.getLocation(), -1, rc.getTeam());
+
+        RobotInfo[] nearbyRobots = rc.senseNearbyRobots(rc.getLocation(), -1, rc.getTeam());
 
         //Get Archon Location if one is not already existed
         if (homeArchonLoc.equals(null)) {
 
-            for (RobotInfo Robot: nearbyArchon) {
+            for (RobotInfo Robot: nearbyRobots) {
 
                 if (Robot.getType() == RobotType.ARCHON) {
 
@@ -38,21 +34,16 @@ public class BuilderController {
             }
         }
 
-        //Assumes we're only making labs so far (watchtowers later)
+        //TODO: NOTE THAT THIS Assumes we're only making labs so far (watchtowers later)
 
         wantMoreLabs = true;
 
-        if (rc.readSharedArray(10) == 1)
-        {
+        //1 = Archon should save lead for a single lab, else not.
+        //Read array when possible to save bytecode
 
-        //1 = Archon should save for a single lab, else not.
+        if (rc.readSharedArray(10) == 1) { }
 
-        if (rc.readSharedArray(10) == 1) {
-
-        }
-
-        else if (wantMoreLabs)
-        {
+        else if (wantMoreLabs) {
             rc.writeSharedArray(10, 1);
         }
         //Decide where we want them to move towards.
@@ -63,58 +54,14 @@ public class BuilderController {
         int distToEastWall = rc.getMapWidth() - homeArchonLoc.x;
         int distToWestWall = homeArchonLoc.x;
 
-        //TODO: fix inefficiency
-
-        MapLocation dirForFirstLab = null;
-        MapLocation dirForSecondLab = null;
-
-       /*  MapLocation LocForFirstLab = null;
-        MapLocation LocForSecondLab = null;
-
-        MapLocation dirLabPriorityOne = null;
-        MapLocation dirLabPriorityTwo = null;
-
-        MapLocation PriorityOneAdjusted = null;
-
-        MapLocation PriorityTwoAdjusted = null;
         //Based on this, we decide on the two walls to check out
         //Edge cases: Archon against a wall or corner
-
-        //First lab(s) location
-         if (distToNorthWall >= distToSouthWall && distToSouthWall > 0) {
-             dirForFirstLab = new MapLocation (me.x, 0);
-         }
-         else if (distToSouthWall >= distToNorthWall && distToNorthWall > 0) {
-             dirForFirstLab = new MapLocation (me.x, rc.getMapHeight());
-         }
-
-        //Second lab location
-        if (distToWestWall >= distToEastWall && distToEastWall > 0) {
-            dirForSecondLab = new MapLocation (rc.getMapWidth(), me.y);
-        }
-        else if (distToEastWall >= distToWestWall && distToWestWall > 0) {
-            dirForSecondLab = new MapLocation (0, me.y);
-        }
 
         //Set the closest lab to be priority
 
         RobotInfo[] nearbyEnemies = rc.senseNearbyRobots(-1, rc.getTeam().opponent());
-        senseRubble(MapLocation)
-        if (me.distanceSquaredTo(dirForFirstLab) >= me.distanceSquaredTo(dirForSecondLab))
-        {
-            dirLabPriorityOne = dirForSecondLab;
-            dirLabPriorityTwo = dirForFirstLab;
-        }
-        else
-        {
-            dirLabPriorityTwo = dirForSecondLab;
-            dirLabPriorityOne = dirForFirstLab;
-        }
 
-
-        //First Builder goes to whichever target is closest
-=======
-        MapLocation PriorityTwoAdjusted = null; */
+        //First Builder goes to whichever target is first
 
         //Based on this, we decide on the two walls to check out
         //Edge cases: Archon against a wall or corner
