@@ -13,9 +13,16 @@ public class BuilderController {
     static MapLocation target = null;
     static MapLocation homeArchonLoc = null;
     static MapLocation[] rubbleinArea = null;
-    static boolean isEnemiesNear;
 
     static void runBuilder(RobotController rc) throws GameActionException {
+
+        //If any enemies detected, report
+        RobotInfo[] nearbyEnemies = rc.senseNearbyRobots(-1, rc.getTeam().opponent());
+        if (nearbyEnemies.length > 0) {
+            for (int i = 0; i < nearbyEnemies.length; i++) {
+                reportEnemy(rc, nearbyEnemies[i].getType(), nearbyEnemies[i].getLocation());
+            }
+        }
 
         //Send robot ID to the comms array for unique identification.
         //TODO: replace placeholder based on COMMS. RobotID won't just equal 1 and 2.
@@ -124,15 +131,6 @@ public class BuilderController {
                 //Set target to lowestRubble
                 target = lowestRubble;
 
-                if (nearbyEnemies != null) {
-                    isEnemiesNear = true;
-                    //TODO: Send a flag if one isn't already there
-                }
-
-                else {
-                    isEnemiesNear = false;
-                }
-                //dirAdjustedLab = rc.getLocation().directionTo().PriorityOneAdjusted.opposite();
             }
 
         }
