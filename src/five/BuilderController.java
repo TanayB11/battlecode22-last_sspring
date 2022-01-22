@@ -13,7 +13,6 @@ public class BuilderController {
     static MapLocation target = null;
     static MapLocation homeArchonLoc = null;
     static MapLocation[] rubbleinArea = null;
-    static MapLocation lowRubbleTarget = null;
 
     static void runBuilder(RobotController rc) throws GameActionException {
 
@@ -76,9 +75,10 @@ public class BuilderController {
                 target = new MapLocation(homeArchonLoc.x, rc.getMapHeight());
             }
         }
+
         // Second lab location if one hasn't already been set yet and this is Builder #2
-        // TODO: Target needs to be updated in more cases, like if target = north side
-        else if (RobotID == 2 && target == null) {
+
+        else if (RobotID == 2) {
 
             if (distToWestWall >= distToEastWall && distToEastWall > 0) {
                 target = new MapLocation(rc.getMapWidth(), homeArchonLoc.y);
@@ -88,24 +88,17 @@ public class BuilderController {
         }
 
         //Initialize and move to priority spot
-        //TODO: actually search the spot once there to make sure its not high rubble;
-        //Adjusted terms will be modified
         //set goals to whatever our adjusted location is
 
         bfs = new DroidBFS(rc);
 
         Direction dirAdjustedLab = null;
 
-        if (RobotID == 1 && wantMoreLabs) {
+        if ((RobotID == 1 || RobotID == 2)&& wantMoreLabs) {
             bfs.move(target);
-            //search around once in area
-
             boolean isEnemiesNear;
 
-            if ((RobotID == 1 || RobotID == 2) && wantMoreLabs) {
-                bfs.move(target);
-            }
-
+            //search around once in area
             if (rc.getLocation().equals(target)) {
 
                 //Once we're there, check the area for a new target with lower rubble
@@ -116,8 +109,7 @@ public class BuilderController {
 
                 //determine spot with lowest rubble by swapping
                 for (MapLocation rubbleLoc : rubbleinArea) {
-                    if (rc.senseRubble(lowestRubble) > rc.senseRubble(rubbleLoc))
-                    {
+                    if (rc.senseRubble(lowestRubble) > rc.senseRubble(rubbleLoc)) {
                         lowestRubble =  rubbleLoc;
                     }
                 }
@@ -132,17 +124,15 @@ public class BuilderController {
 
                 else {
                     isEnemiesNear = false;
-
                 }
                 //dirAdjustedLab = rc.getLocation().directionTo().PriorityOneAdjusted.opposite();
             }
 
         }
+
         //get opposite direction so we don't build off the map
+
         dirAdjustedLab = homeArchonLoc.directionTo(target).opposite();
-
-        //TODO: adjust account for rubble
-
 
         if (safeBuild(rc, RobotType.LABORATORY, dirAdjustedLab) && wantMoreLabs){
             rc.buildRobot(RobotType.LABORATORY, dirAdjustedLab);
