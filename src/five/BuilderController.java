@@ -27,7 +27,7 @@ public class BuilderController {
         //Send robot ID to the comms array for unique identification.
         //TODO: replace placeholder based on COMMS. RobotID won't just equal 1 and 2.
 
-        int RobotID = 0;
+        int RobotIDFromArrayOnceThatsSetUp = 0;
 
         RobotInfo[] nearbyRobots = rc.senseNearbyRobots(rc.getLocation(), -1, rc.getTeam());
 
@@ -67,8 +67,6 @@ public class BuilderController {
 
         //Set the closest lab to be priority
 
-        RobotInfo[] nearbyEnemies = rc.senseNearbyRobots(-1, rc.getTeam().opponent());
-
         //First Builder goes to whichever target is first
 
         //Based on this, we decide on the two walls to check out
@@ -77,7 +75,7 @@ public class BuilderController {
         //First lab location if one hasn't already been set yet and this is Builder #1
         MapLocation initTarget = null;
 
-        if (RobotID == 1 && target == null) {
+        if (RobotIDFromArrayOnceThatsSetUp == 1 && target == null) {
 
             if (distToNorthWall >= distToSouthWall && distToSouthWall > 0) {
                 initTarget = new MapLocation(homeArchonLoc.x, 0);
@@ -90,7 +88,7 @@ public class BuilderController {
 
         // Second lab location if one hasn't already been set yet and this is Builder #2
 
-        else if (RobotID == 2 && target == null) {
+        else if (RobotIDFromArrayOnceThatsSetUp == 2 && target == null) {
 
             if (distToWestWall >= distToEastWall && distToEastWall > 0) {
                 initTarget = new MapLocation(rc.getMapWidth(), homeArchonLoc.y);
@@ -107,7 +105,7 @@ public class BuilderController {
         bfs = new DroidBFS(rc);
         Direction dirAdjustedLab = null;
 
-        if ((RobotID == 1 || RobotID == 2)) {
+        if ((RobotIDFromArrayOnceThatsSetUp == 1 || RobotIDFromArrayOnceThatsSetUp == 2)) {
             bfs.move(target);
 
             //search around once in area
