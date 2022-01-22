@@ -12,11 +12,13 @@ public class BuilderController {
     static boolean wantMoreLabs = false;
     static MapLocation target = null;
     static MapLocation homeArchonLoc = null;
+    static MapLocation[] rubbleinArea = null;
+    static MapLocation lowRubbleTarget = null;
 
     static void runBuilder(RobotController rc) throws GameActionException {
 
         //Send robot ID to the comms array for unique identification.
-        //TODO: replace placeholder based on COMMS:
+        //TODO: replace placeholder based on COMMS. RobotID won't just equal 1 and 2.
 
         int RobotID = 0;
 
@@ -105,12 +107,30 @@ public class BuilderController {
             }
 
             if (rc.getLocation().equals(target)) {
+
                 //Once we're there, check the area for a new target with lower rubble
+                rubbleinArea = rc.getAllLocationsWithinRadiusSquared(rc.getLocation(), -1);
+
+                //This is a temporary MapLocation that will change in the for loop
+                MapLocation lowestRubble = rc.getLocation();
+
+                //determine spot with lowest rubble by swapping
+                for (MapLocation rubbleLoc : rubbleinArea) {
+                    if (rc.senseRubble(lowestRubble) > rc.senseRubble(rubbleLoc))
+                    {
+                        lowestRubble =  rubbleLoc;
+                    }
+                }
+
+                //Set target to lowestRubble
+                target = lowestRubble;
 
                 if (nearbyEnemies != null) {
                     isEnemiesNear = true;
-                    //TODO: Send a flag
-                } else {
+                    //TODO: Send a flag if one isn't already there
+                }
+
+                else {
                     isEnemiesNear = false;
 
                 }
@@ -121,13 +141,10 @@ public class BuilderController {
         //get opposite direction so we don't build off the map
         dirAdjustedLab = homeArchonLoc.directionTo(target).opposite();
 
-        //TODO: adjust diAdjustedLab to account for rubble
-
-        dirAdjustedLab = homeArchonLoc.directionTo(target).opposite();
+        //TODO: adjust account for rubble
 
 
-        if (safeBuild(rc, RobotType.LABORATORY, dirAdjustedLab) && wantMoreLabs) ;
-        {
+        if (safeBuild(rc, RobotType.LABORATORY, dirAdjustedLab) && wantMoreLabs){
             rc.buildRobot(RobotType.LABORATORY, dirAdjustedLab);
         }
 
