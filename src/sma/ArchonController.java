@@ -1,10 +1,10 @@
-package five;
+package sma;
 
 import battlecode.common.*;
 
-import static five.util.Communication.*;
-import static five.util.Miscellaneous.*;
-import static five.util.SafeActions.safeBuild;
+import static sma.util.Communication.*;
+import static sma.util.Miscellaneous.*;
+import static sma.util.SafeActions.safeBuild;
 
 // TODO: check all array indices
 // TODO: test different heuristics
@@ -67,8 +67,8 @@ public class ArchonController {
                     priorityEnemy = nearbyEnemies[i];
                     break;
                 } else if (
-                    priorityEnemy == null ||
-                    getReportEnemyPriority(enemyType) > getReportEnemyPriority(priorityEnemy.getType())
+                        priorityEnemy == null ||
+                                getReportEnemyPriority(enemyType) > getReportEnemyPriority(priorityEnemy.getType())
                 ) {
                     priorityEnemy = nearbyEnemies[i];
                 }
@@ -78,7 +78,7 @@ public class ArchonController {
 
         // 2. If we're losing health or if we see an enemy archon, throw flag
         isPrioritySpawner = rc.getHealth() < prevHP ||
-            (priorityEnemy != null && priorityEnemy.getType().equals(RobotType.ARCHON));
+                (priorityEnemy != null && priorityEnemy.getType().equals(RobotType.ARCHON));
 
         // Spawns towards enemies
         if (isPrioritySpawner) {
@@ -90,10 +90,10 @@ public class ArchonController {
 
             Direction dirToBuild = (
                     priorityEnemy != null &&
-                    rc.canBuildRobot(RobotType.SOLDIER, me.directionTo(priorityEnemyLocation))
-                ) ?
-                me.directionTo(priorityEnemyLocation) :
-                directions[rng.nextInt(directions.length)];
+                            rc.canBuildRobot(RobotType.SOLDIER, me.directionTo(priorityEnemyLocation))
+            ) ?
+                    me.directionTo(priorityEnemyLocation) :
+                    directions[rng.nextInt(directions.length)];
 
             if (safeBuild(rc, RobotType.SOLDIER, dirToBuild)) {
                 writeNumSoldiers(rc, numSoldiers + 1);
@@ -162,10 +162,10 @@ public class ArchonController {
             rc.setIndicatorString("IN PHASE 3");
 
             // spawn additional miners to meet econ needs
-                // definitions
-                // a = \frac{1}{m} * \frac{1}{10} * \sum_{t-9}^t \mathrm{Pb}(t)
-                // # of miners to spawn = l (amt of lead we want) / a
-                // assuming the current round >= 10 by the time we get here
+            // definitions
+            // a = \frac{1}{m} * \frac{1}{10} * \sum_{t-9}^t \mathrm{Pb}(t)
+            // # of miners to spawn = l (amt of lead we want) / a
+            // assuming the current round >= 10 by the time we get here
 //            int l = BASE_LEAD_WANTED + readLeadRequestedForBuildings(rc);
 //            double a = incomeAvgQ.calcAverageVal() / (double)numMiners;
 //            int mapArea = rc.getMapWidth() * rc.getMapHeight();

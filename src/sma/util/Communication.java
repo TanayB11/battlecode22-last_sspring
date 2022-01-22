@@ -1,4 +1,4 @@
-package five.util;
+package sma.util;
 
 import battlecode.common.GameActionException;
 import battlecode.common.MapLocation;

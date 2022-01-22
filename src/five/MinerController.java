@@ -9,6 +9,7 @@ import java.util.Comparator;
 
 import static five.util.Communication.reportEnemy;
 import static five.util.Exploration.minerExploreLoc;
+import static five.util.Miscellaneous.rng;
 import static five.util.SafeActions.safeMove;
 import static four.util.SafeActions.safeMine;
 
@@ -31,7 +32,7 @@ public class MinerController {
         RobotInfo retreatFromEnemy = null;
 
         if (nearbyEnemies.length > 0) {
-            Arrays.sort(nearbyEnemies, (a, b) -> me.distanceSquaredTo(a.getLocation()) - me.distanceSquaredTo(b.getLocation()));
+            Arrays.sort(nearbyEnemies, Comparator.comparingInt(a -> me.distanceSquaredTo(a.getLocation())));
             for (int i = 0; i < nearbyEnemies.length; i++) {
                 reportEnemy(rc, nearbyEnemies[i].getType(), nearbyEnemies[i].getLocation());
                 if (nearbyEnemies[i].getType().equals(RobotType.SAGE) || nearbyEnemies[i].getType().equals(RobotType.SOLDIER) || nearbyEnemies[i].getType().equals(RobotType.WATCHTOWER)) {
@@ -85,20 +86,19 @@ public class MinerController {
             if (lowestRubble > MIN_ACCEPTABLE_RUBBLE) {
                 Direction neutralDir1 = dirToEnemy.rotateRight().rotateRight();
                 Direction neutralDir2 = dirToEnemy.rotateLeft().rotateLeft();
-                int neutralDir1Rubble = Integer.MAX_VALUE;
-                int neutralDir2Rubble = Integer.MAX_VALUE;
+                int neutralDirRubble = Integer.MAX_VALUE; // avoids bestIndex = -1 issue
 
                 if (rc.onTheMap(rc.adjacentLocation(neutralDir1))) {
-                    neutralDir1Rubble = rc.senseRubble(rc.adjacentLocation(neutralDir1));
-                    if (neutralDir1Rubble < lowestRubble) {
+                    neutralDirRubble = rc.senseRubble(rc.adjacentLocation(neutralDir1));
+                    if (neutralDirRubble < lowestRubble) {
                         bestIndex = 3;
-                        lowestRubble = neutralDir1Rubble;
+                        lowestRubble = neutralDirRubble;
                     }
                 }
 
                 if (rc.onTheMap(rc.adjacentLocation(neutralDir2))) {
-                    neutralDir2Rubble = rc.senseRubble(rc.adjacentLocation(neutralDir2));
-                    if (neutralDir2Rubble < lowestRubble) {
+                    neutralDirRubble = rc.senseRubble(rc.adjacentLocation(neutralDir2));
+                    if (neutralDirRubble < lowestRubble) {
                         bestIndex = 4;
                     }
                 }
@@ -107,6 +107,7 @@ public class MinerController {
             switch (bestIndex){
                 case 3:     dirOfRetreat = dirToEnemy.rotateRight().rotateRight(); break;
                 case 4:     dirOfRetreat = dirToEnemy.rotateLeft().rotateLeft(); break;
+                case -1:    dirOfRetreat = initPossibleDirs[rng.nextInt(initPossibleDirs.length)]; break; // duct-tape solution
                 default:    dirOfRetreat = initPossibleDirs[bestIndex]; break;
             }
 
