@@ -20,7 +20,7 @@ public class Communication {
         rc.writeSharedArray(ARCHON_COUNT_INDEX, rc.readSharedArray(ARCHON_COUNT_INDEX) + 1);
     }
 
-    public static int currArchonCount(RobotController rc) throws GameActionException {
+    public static int readArchonCount(RobotController rc) throws GameActionException {
         return rc.readSharedArray(ARCHON_COUNT_INDEX);
     }
 
@@ -52,6 +52,14 @@ public class Communication {
         rc.writeSharedArray(index, (me.x << 10) | (me.y << 4));
     }
 
+    public static void alphaSendHeartbeat(RobotController rc) throws GameActionException {
+        rc.writeSharedArray(8, rc.getRoundNum());
+    }
+
+    public static int listenAlphaHeartbeat(RobotController rc) throws GameActionException {
+        return rc.readSharedArray(8);
+    }
+
     /*
     Section 2: Miners
     */
@@ -60,7 +68,7 @@ public class Communication {
         rc.writeSharedArray(MINER_COUNT_INDEX, rc.readSharedArray(MINER_COUNT_INDEX) + 1);
     }
 
-    public static int currMinerCount(RobotController rc) throws GameActionException {
+    public static int readNumMiners(RobotController rc) throws GameActionException {
         return rc.readSharedArray(MINER_COUNT_INDEX);
     }
 
@@ -72,7 +80,7 @@ public class Communication {
         rc.writeSharedArray(SOLDIER_COUNT_INDEX, rc.readSharedArray(SOLDIER_COUNT_INDEX) + 1);
     }
 
-    public static int currSoldierCount(RobotController rc) throws GameActionException {
+    public static int readNumSoldiers(RobotController rc) throws GameActionException {
         return rc.readSharedArray(SOLDIER_COUNT_INDEX);
     }
 
@@ -114,5 +122,30 @@ public class Communication {
         if (currEnemyPriority == 0 || currEnemyPriority < getReportEnemyPriority(type)) {
             writeEnemy(rc, type, locationSpotted);
         }
+    }
+
+    /*
+    Section 5: Flag throwing
+    Notify other troops that something has happened
+    */
+
+    public static void throwFlag(RobotController rc, int index, int bitShift) throws GameActionException {
+        rc.writeSharedArray(index, rc.readSharedArray(index) | (1 << bitShift));
+    }
+
+    public static void resetFlag(RobotController rc, int index, int bitShift) throws GameActionException {
+        rc.writeSharedArray(index, rc.readSharedArray(index) & ~(1 << bitShift));
+    }
+
+    public static boolean checkFlag(RobotController rc, int index, int bitShift) throws GameActionException {
+        // Return true if flag has been thrown, false otherwise
+        if (1 == (rc.readSharedArray(index) & (0 ^ (1 << bitShift))) >> bitShift) {
+            return true;
+        }
+        return false;
+    }
+
+    public static void clearIndex(RobotController rc, int index) throws GameActionException {
+        rc.writeSharedArray(index, 0);
     }
 }

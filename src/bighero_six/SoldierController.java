@@ -20,6 +20,16 @@ import static bighero_six.util.Miscellaneous.*;
 //9. stay on the outside of attacking range
 // 10. healing (IMPORTANT)
 
+// overhaul troop counter, add old methods to comms ( DONE )
+// implement retreat to nearest friendly archon (implement for miner, too) (DONE)
+    // if too many friendlies nearby need healing, disintegrate -> lead farm
+    // the ones with lowest health disintegrate in nonlead squares (threshold = ?)
+// TODO: add archon healing (heal by lowest health, prioritize troops)
+    // (archon priority) Soldiers > miners
+// TODO: test soldier-miner (wihthoulikelikngs for exiting insert modebke
+// TODO (archon): move to lowest rubble if the lowest rubble in vision is at least 25 less than our current
+    // compare fixed and variable cost
+
 public class SoldierController {
     static BFS bfs = null;
     static MapLocation goal = null; // either waypoint or comms goal
@@ -29,12 +39,11 @@ public class SoldierController {
     static int numValidWaypoints;
 
     static boolean isDying = false;
-    static int prevHP = Integer.MIN_VALUE;
 
     static final int SURROUNDED_THRESHOLD = 5;
     static final int ACCEPTABLE_TARGET_LOC_RUBBLE = 50;
 
-    public void runSoldier(RobotController rc) throws GameActionException {
+    public static void runSoldier(RobotController rc) throws GameActionException {
         MapLocation me = rc.getLocation();
 
         // initialize
@@ -48,6 +57,8 @@ public class SoldierController {
         Macro strategy implementation
         */
 
+        soldierReport(rc);
+
         // report nearby enemies (macro)
         RobotInfo[] nearbyEnemies = rc.senseNearbyRobots(-1, rc.getTeam().opponent());
         if (nearbyEnemies.length > 0) {
@@ -57,21 +68,26 @@ public class SoldierController {
         }
 
         // if we're dying, return to be healed
-        if (rc.getHealth() > 0.2 * RobotType.SOLDIER.health) {
+        // consider ourselves dying until we're near full HP
+        if (isDying && rc.getHealth() > 0.9 * RobotType.SOLDIER.health) {
             isDying = false;
-        } else if (!isDying) {
+        } else if (!isDying && rc.getHealth() < 0.4 * RobotType.SOLDIER.health) {
             isDying = true;
             goingToWaypt = false;
 
-            // TODO: replace with new troop counters
-            int soldiersCt = readNumSoldiers(rc);
-            writeNumSoldiers(rc, soldiersCt - 1);
+            MapLocation nearestArch = getNearestFriendlyArch(rc);
+            goal = nearestArch;
 
-            // check if returns null
-            // TODO: uncomment and re-implement findNearestFriendlyArchon
-//            MapLocation nearestArchon = Util.findNearestFriendlyArchon(rc);
-//            goal = nearestArchon;
+            // TODO
+            //Depending on the difference the closest and the second closest
+            //Once hits a threshold -> start sending to the next one
+            //Ratio of euclidean distance
+            //If the nearest archon too far away and/or too low health, run back home and die
+            //Depending on size of line
+
         }
+
+        // if we're retreating/dying, set goal to null if we're close enough to archon
 
         // avoid a waypoint being a high rubble square
         if (
@@ -86,7 +102,7 @@ public class SoldierController {
         if (goingToWaypt && commsGoal != null) {
             goal = commsGoal;
             goingToWaypt = false;
-        } else {
+        } else if (!isDying) {
             goal = commsGoal != null ? commsGoal : waypoints[rng.nextInt(numValidWaypoints)];
             goingToWaypt = (commsGoal == null);
         }
@@ -150,7 +166,7 @@ public class SoldierController {
 
     // TODO : do this in archonController
     // NumWaypoints = num of archons
-    private MapLocation[] calcWaypoints(RobotController rc) throws GameActionException {
+    private static MapLocation[] calcWaypoints(RobotController rc) throws GameActionException {
         // figure out symmetery
         MapLocation arch0Loc = readArchLoc(rc, 0);
         MapLocation arch1Loc = readArchLoc(rc, 1);
@@ -188,24 +204,24 @@ public class SoldierController {
     }
 
     // helper function to determine whether two locations are rotated by 180°
-    private boolean areRotated(MapLocation l1, MapLocation l2) {
+    private static boolean areRotated(MapLocation l1, MapLocation l2) {
         return l1 != null && l2 != null && l1.x == l2.y && l1.y == l2.x;
     }
 
-    private MapLocation rotateLocation(MapLocation loc) {
+    private static MapLocation rotateLocation(MapLocation loc) {
         return (loc != null) ? new MapLocation(loc.y, loc.x) : null;
     }
 
-    private MapLocation flipLocation(MapLocation loc, boolean reflectX, int mapWidth, int mapHeight) {
+    private static MapLocation flipLocation(MapLocation loc, boolean reflectX, int mapWidth, int mapHeight) {
         if (reflectX) {
-            return new MapLocation(loc.x, mapHeight - loc.y);
+            return (loc != null) ? new MapLocation(loc.x, mapHeight - loc.y) : null;
         } else {
-            return new MapLocation(mapWidth - loc.x, loc.y);
+            return (loc != null) ? new MapLocation(mapWidth - loc.x, loc.y) : null;
         }
     }
 
 
-    private MapLocation avgLoc(MapLocation l1, MapLocation l2) {
+    private static MapLocation avgLoc(MapLocation l1, MapLocation l2) {
         return (l1 != null && l2 != null) ? new MapLocation((l1.x + l2.x) / 2, (l1.y + l2.y) / 2) : null;
     }
 

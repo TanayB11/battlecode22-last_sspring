@@ -6,6 +6,7 @@ import java.util.Arrays;
 import java.util.Comparator;
 import java.util.Random;
 
+import static bighero_six.util.Communication.readArchLoc;
 import static bighero_six.util.SafeActions.safeMove;
 
 public class Miscellaneous {
@@ -91,7 +92,8 @@ public class Miscellaneous {
         }
 
         // Neutral positions (move sideways)
-        int lowestRubble = rc.senseRubble(rc.adjacentLocation(initPossibleDirs[bestIndex]));
+        MapLocation adjLoc = rc.adjacentLocation(initPossibleDirs[bestIndex]);
+        int lowestRubble = rc.onTheMap(adjLoc) ? rc.senseRubble(adjLoc) : Integer.MAX_VALUE;
         if (lowestRubble > MIN_ACCEPTABLE_RUBBLE) {
             Direction neutralDir1 = dirToTarget.rotateRight().rotateRight();
             Direction neutralDir2 = dirToTarget.rotateLeft().rotateLeft();
@@ -121,5 +123,23 @@ public class Miscellaneous {
         }
 
         safeMove(rc, dirOfRetreat);
+    }
+
+    public static MapLocation getNearestFriendlyArch(RobotController rc) throws GameActionException {
+        MapLocation currLoc;
+        MapLocation nearestArch = null;
+        int currDist;
+        int bestDist = Integer.MAX_VALUE;
+        for (int i = 0; i < 4; i++) {
+            currLoc = readArchLoc(rc, i);
+            if (currLoc != null){
+                currDist = rc.getLocation().distanceSquaredTo(currLoc);
+                if (currDist < bestDist) {
+                    bestDist = currDist;
+                    nearestArch = currLoc;
+                }
+            }
+        }
+        return nearestArch;
     }
 }
