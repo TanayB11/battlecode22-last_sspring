@@ -18,17 +18,20 @@ import static bighero_six.util.Miscellaneous.*;
 //8. Keep track of past few locations so you don't get stuck in pathfinding loop on pathological cases.
 //=======
 //9. stay on the outside of attacking range
-
-// TODO:
-// implement waypoints, retreat as soon as the soldier attacks (like a fencer)
 // 10. healing (IMPORTANT)
 
 public class SoldierController {
     static BFS bfs = null;
     static MapLocation goal = null; // either waypoint or comms goal
-    static boolean goingToWaypt = false;
 
-    static final int SURROUNDED_THRESHOLD = 5, MIN_ACCEPTABLE_RUBBLE = 25;
+    static MapLocation[] waypoints;
+    static boolean goingToWaypt = false;
+    static int numValidWaypoints;
+
+    static boolean isDying = false;
+    static int prevHP = Integer.MIN_VALUE;
+
+    static final int SURROUNDED_THRESHOLD = 5;
     static final int ACCEPTABLE_TARGET_LOC_RUBBLE = 50;
 
     public void runSoldier(RobotController rc) throws GameActionException {
@@ -37,6 +40,8 @@ public class SoldierController {
         // initialize
         if (bfs == null) {
             bfs = new DroidBFS(rc);
+            waypoints = calcWaypoints(rc);
+            numValidWaypoints = rc.getArchonCount();
         }
 
         /*
@@ -49,6 +54,23 @@ public class SoldierController {
             for (int i = 0; i < nearbyEnemies.length; i++) {
                 reportEnemy(rc, nearbyEnemies[i].getType(), nearbyEnemies[i].getLocation());
             }
+        }
+
+        // if we're dying, return to be healed
+        if (rc.getHealth() > 0.2 * RobotType.SOLDIER.health) {
+            isDying = false;
+        } else if (!isDying) {
+            isDying = true;
+            goingToWaypt = false;
+
+            // TODO: replace with new troop counters
+            int soldiersCt = readNumSoldiers(rc);
+            writeNumSoldiers(rc, soldiersCt - 1);
+
+            // check if returns null
+            // TODO: uncomment and re-implement findNearestFriendlyArchon
+//            MapLocation nearestArchon = Util.findNearestFriendlyArchon(rc);
+//            goal = nearestArchon;
         }
 
         // avoid a waypoint being a high rubble square
@@ -65,7 +87,7 @@ public class SoldierController {
             goal = commsGoal;
             goingToWaypt = false;
         } else {
-            goal = commsGoal != null ? commsGoal : getNearestWaypt(rc);
+            goal = commsGoal != null ? commsGoal : waypoints[rng.nextInt(numValidWaypoints)];
             goingToWaypt = (commsGoal == null);
         }
 
@@ -95,10 +117,11 @@ public class SoldierController {
         // 2. If enemy is hostile, travel until enemy is on edge of attack radius, unless we're swarmed by allies
             // If we're swarmed by allies, then go to the enemy
             // If we're low on health, retreat to nearest archon (needs comms)
-        if (targetEnemy != null && isAttackingUnit(targetEnemy.getType())) {
+
+        boolean surroundedByAllies = getNearbyAtkAllies(rc, me) > SURROUNDED_THRESHOLD;
+        if (targetEnemy != null && !isDying) {
             MapLocation enemyLoc = targetEnemy.getLocation();
-            boolean surroundedByAllies = getNearbyAtkAllies(rc, me) > SURROUNDED_THRESHOLD;
-            boolean enemyInRange = me.isWithinDistanceSquared(enemyLoc, RobotType.SOLDIER.actionRadiusSquared;
+            boolean enemyInRange = me.isWithinDistanceSquared(enemyLoc, RobotType.SOLDIER.actionRadiusSquared);
 
             // 2.1 Attack strategy: attack-retreat like a fencer
 
@@ -120,20 +143,14 @@ public class SoldierController {
             } else if (enemyInRange) {
                 retreatFrom(rc, enemyLoc);
             }
-        } else if (targetEnemy != null){
-            MapLocation enemyLoc = targetEnemy.getLocation();
-            bfs.move(enemyLoc);
-            if (rc.canAttack(enemyLoc)) {
-                rc.attack(enemyLoc);
-            }
         } else {
             bfs.move(goal);
         }
     }
 
-    // TODO : calculate and store waypoints at start of the game, do this in archonController
+    // TODO : do this in archonController
     // NumWaypoints = num of archons
-    private MapLocation[] getNearestWaypt(RobotController rc) throws GameActionException {
+    private MapLocation[] calcWaypoints(RobotController rc) throws GameActionException {
         // figure out symmetery
         MapLocation arch0Loc = readArchLoc(rc, 0);
         MapLocation arch1Loc = readArchLoc(rc, 1);
@@ -156,6 +173,16 @@ public class SoldierController {
             waypoints[3] = avgLoc(arch0Loc, rotateLocation(arch3Loc));
         } else {
             // find out whether it's x or y axis reflection
+            int mapWidth = rc.getMapWidth();
+            int mapHeight = rc.getMapHeight();
+            boolean isXReflection =
+                flipLocation(arch0Loc, false, mapWidth, mapHeight).equals(arch1Loc) ||
+                flipLocation(arch0Loc, false, mapWidth, mapHeight).equals(arch2Loc) ||
+                flipLocation(arch0Loc, false, mapWidth, mapHeight).equals(arch3Loc);
+            waypoints[0] = avgLoc(arch0Loc, flipLocation(arch0Loc, isXReflection, mapWidth, mapHeight));
+            waypoints[1] = avgLoc(arch1Loc, flipLocation(arch1Loc, isXReflection, mapWidth, mapHeight));
+            waypoints[2] = avgLoc(arch2Loc, flipLocation(arch2Loc, isXReflection, mapWidth, mapHeight));
+            waypoints[3] = avgLoc(arch3Loc, flipLocation(arch3Loc, isXReflection, mapWidth, mapHeight));
         }
         return waypoints;
     }
@@ -169,11 +196,11 @@ public class SoldierController {
         return (loc != null) ? new MapLocation(loc.y, loc.x) : null;
     }
 
-    private MapLocation flipLocation(MapLocation loc, boolean reflectX) {
+    private MapLocation flipLocation(MapLocation loc, boolean reflectX, int mapWidth, int mapHeight) {
         if (reflectX) {
-            return new M
+            return new MapLocation(loc.x, mapHeight - loc.y);
         } else {
-
+            return new MapLocation(mapWidth - loc.x, loc.y);
         }
     }
 

@@ -60,7 +60,7 @@ public class Miscellaneous {
         // Of 8 possible movement directions, eliminate 3
         // Favor the 3 away from enemy, if those are not beyond rubble threshold
         // Otherwise look at the other two "neutral"/sideways directions, pick min rubble of all 5
-        final int MIN_ACCEPTABLE_RUBBLE = 50;
+        final int MIN_ACCEPTABLE_RUBBLE = 25;
 
         Direction dirToTarget = rc.getLocation().directionTo(enemyLoc);
         Direction dirOfRetreat = null;
