@@ -6,11 +6,14 @@ import battlecode.common.RobotController;
 import battlecode.common.RobotType;
 
 public class Communication {
-    final static int ARCHON_COUNT_INDEX = 4;
-    final static int MINER_COUNT_INDEX = 5;
-    final static int SOLDIER_COUNT_INDEX = 6;
-    final static int BUILD_ORDER_INDEX = 11;
-    final static int TARGET_ENEMY_INDEX = 12;
+    // our archon locations are 0-3
+    public final static int ARCHON_COUNT_INDEX = 4;
+    public final static int MINER_COUNT_INDEX = 5;
+    public final static int SOLDIER_COUNT_INDEX = 6;
+    // 7-10 are for the other units
+    public final static int FLAG_INDEX = 11;
+    public final static int TARGET_ENEMY_INDEX = 12;
+    public final static int BUILD_QUEUE_INDEX = 13;
 
     /*
     Section 1: Archons
@@ -52,13 +55,16 @@ public class Communication {
         rc.writeSharedArray(index, (me.x << 10) | (me.y << 4));
     }
 
-    public static void alphaSendHeartbeat(RobotController rc) throws GameActionException {
-        rc.writeSharedArray(8, rc.getRoundNum());
-    }
-
-    public static int listenAlphaHeartbeat(RobotController rc) throws GameActionException {
-        return rc.readSharedArray(8);
-    }
+    // Build queue
+//    public static void enqueueBuild(RobotController rc, int index) throws GameActionException {
+//        // 44444
+//        // 001 -> miner, 010 -> soldier, 011 -> builder, 100 -> sage
+//        // 0001 | 000 000 000 111
+//        //                    111
+//        // 0001 | 000 000 000 111
+//        // 0001 | 000 000 000 111
+//        // (bq & ~(0 << 2)) << (3 * counter)
+//    }
 
     /*
     Section 2: Miners
@@ -125,24 +131,22 @@ public class Communication {
     }
 
     /*
-    Section 5: Flag throwing
+    Section 5: Flag throwing, utilities
     Notify other troops that something has happened
+        0th bit is archon: priority spawner
     */
 
-    public static void throwFlag(RobotController rc, int index, int bitShift) throws GameActionException {
-        rc.writeSharedArray(index, rc.readSharedArray(index) | (1 << bitShift));
+    public static void throwFlag(RobotController rc, int bitShift) throws GameActionException {
+        rc.writeSharedArray(FLAG_INDEX, rc.readSharedArray(FLAG_INDEX) | (1 << bitShift));
     }
 
-    public static void resetFlag(RobotController rc, int index, int bitShift) throws GameActionException {
-        rc.writeSharedArray(index, rc.readSharedArray(index) & ~(1 << bitShift));
+    public static void resetFlag(RobotController rc, int bitShift) throws GameActionException {
+        rc.writeSharedArray(FLAG_INDEX, rc.readSharedArray(FLAG_INDEX) & ~(1 << bitShift));
     }
 
-    public static boolean checkFlag(RobotController rc, int index, int bitShift) throws GameActionException {
+    public static boolean checkFlag(RobotController rc, int bitShift) throws GameActionException {
         // Return true if flag has been thrown, false otherwise
-        if (1 == (rc.readSharedArray(index) & (0 ^ (1 << bitShift))) >> bitShift) {
-            return true;
-        }
-        return false;
+        return (1 == (rc.readSharedArray(FLAG_INDEX) & (0 ^ (1 << bitShift))) >> bitShift);
     }
 
     public static void clearIndex(RobotController rc, int index) throws GameActionException {

@@ -16,11 +16,8 @@ import static bighero_six.util.SafeActions.safeMine;
 
 public class MinerController {
     static MapLocation miningTarget = null, exploreTarget = null;
-    static int mineTargetRubble = Integer.MAX_VALUE;
     static BFS bfs = null;
     static int prevHP = 0;
-    static boolean mineLock = false;
-    final static int MINE_TARGET_DIFF_THRESHOLD = 15;
 
     static void runMiner(RobotController rc) throws GameActionException {
         //part 1: prep
@@ -63,71 +60,82 @@ public class MinerController {
             //find square with the lowest rubble
             //&& its unoccupied && adjacent to/on lead (more lead wins tiebreaker)
             //if low health, go back for healing
-        if (!mineLock) {
-            MapLocation[] nearbyGold = rc.senseNearbyLocationsWithGold();
-            MapLocation[] nearbyLead = rc.senseNearbyLocationsWithLead(-1, 2);
-            int minRubble = Integer.MAX_VALUE;
+        MapLocation[] nearbyGold = rc.senseNearbyLocationsWithGold();
+        MapLocation[] nearbyLead = rc.senseNearbyLocationsWithLead(-1, 2);
+        MapLocation optimalLoc = null;
 
-            MapLocation optimalLoc = null;
-
-            if (nearbyGold.length > 0) {
-                Arrays.sort(nearbyGold, Comparator.comparingInt(a -> me.distanceSquaredTo(a)));
-                optimalLoc = getOptimalMineLoc(rc, nearbyGold);
-            } else if (nearbyLead.length > 0) {
-                Arrays.sort(nearbyLead, Comparator.comparingInt(a -> me.distanceSquaredTo(a)));
-                optimalLoc = getOptimalMineLoc(rc, nearbyLead);
-            }
-
-//            rc.setIndicatorString(optimalLoc != null ? optimalLoc.toString() : "NO OPTLOC");
-
-            if (miningTarget == null && optimalLoc != null) {
-                rc.setIndicatorString("UPDATED 1");
-                miningTarget = optimalLoc;
-                mineTargetRubble = rc.senseRubble(miningTarget);
-            } else if (optimalLoc != null && rc.senseRubble(optimalLoc) + MINE_TARGET_DIFF_THRESHOLD < mineTargetRubble) {
-                rc.setIndicatorString("UPDATED 2");
-                miningTarget = optimalLoc;
-                mineTargetRubble = rc.senseRubble(optimalLoc);
-            }
-            mineLock = miningTarget != null;
-        } else {
-            exploreTarget = null;
+        if (nearbyGold.length > 0) {
+            optimalLoc = getOptimalMineLoc(rc, nearbyGold);
+        } else if (nearbyLead.length > 0) {
+            optimalLoc = getOptimalMineLoc(rc, nearbyLead);
         }
 
-//        rc.setIndicatorString(miningTarget != null ? (miningTarget.toString()) : "NO MINE TARGET");
+        if (miningTarget == null && optimalLoc != null) {
+            rc.setIndicatorString(optimalLoc.toString());
+            miningTarget = optimalLoc;
+        }
 
         //part 2: execution
 
         //mine adjacent squares
-        mineAdj(rc, me);
+        for (int dx = -1; dx <= 1; dx++) {
+            for (int dy = -1; dy <= 1; dy++) {
+                MapLocation mineLocation = new MapLocation(me.x + dx, me.y + dy);
+                // Notice that the Miner's action cooldown is very low.
+                // You can mine multiple times per turn!
+                while (rc.canMineGold(mineLocation)) {
+                    rc.mineGold(mineLocation);
+                }
+                while (rc.canMineLead(mineLocation) && rc.senseLead(mineLocation) > 1) {
+                    rc.mineLead(mineLocation);
+                }
+            }
+        }
 
         //if attacked, run away
         if (rc.getHealth() < prevHP && retreatFromEnemy != null) {
             retreatFrom(rc, retreatFromEnemy.getLocation());
-            mineLock = false;
             exploreTarget = null;
             prevHP = rc.getHealth();
         } else if (miningTarget != null) {
-            // don't combine if statements, this removes janky edge cases :()
-            if (!mineLock) {
-                bfs.move(miningTarget);
-            }
-        } else {
-            if (exploreTarget == null) {
-                exploreTarget = minerExploreLoc(rc);
-            }
-            bfs.move(exploreTarget);
+            bfs.move(miningTarget);
+        } else if (exploreTarget == null) {
+            exploreTarget = minerExploreLoc(rc);
         }
 
+        // will only execute if we haven't moved yet this turn
+        bfs.move(exploreTarget);
+
         //mine adjacent squares again
-        mineAdj(rc, me);
+        for (int dx = -1; dx <= 1; dx++) {
+            for (int dy = -1; dy <= 1; dy++) {
+                MapLocation mineLocation = new MapLocation(me.x + dx, me.y + dy);
+                // Notice that the Miner's action cooldown is very low.
+                // You can mine multiple times per turn!
+                while (rc.canMineGold(mineLocation)) {
+                    rc.mineGold(mineLocation);
+                }
+                while (rc.canMineLead(mineLocation) && rc.senseLead(mineLocation) > 1) {
+                    rc.mineLead(mineLocation);
+                }
+            }
+        }
     }
 
-    // TODO: check location itself, check if occupied
     private static MapLocation getOptimalMineLoc(RobotController rc, MapLocation[] nearbyResource) throws GameActionException {
         int minRubble = Integer.MAX_VALUE;
         MapLocation optimalLocation = null;
+        int resourceRubble;
         for (int i = 0; i < nearbyResource.length; i++) {
+
+            // check on the square itself
+            resourceRubble = rc.senseRubble(nearbyResource[i]);
+            if (resourceRubble < minRubble) {
+                optimalLocation = nearbyResource[i];
+                minRubble = resourceRubble;
+            }
+
+            // check adjacent squares
             for (int j = 0; j < directions.length; j++){
                 if (rc.canSenseLocation(nearbyResource[i].add(directions[j]))) {
                     if (rc.senseRubble(nearbyResource[i].add(directions[j])) < minRubble) {
@@ -146,15 +154,5 @@ public class MinerController {
             return true;
         }
         return false;
-    }
-
-    static void mineAdj(RobotController rc, MapLocation me) throws GameActionException {
-        for (int dx = -1; dx++ <= 1;) {
-            for (int dy = -1; dy++ <= 1;) {
-                MapLocation mineLocation = new MapLocation(me.x + dx, me.y + dy);
-                safeMine(rc, mineLocation);
-                mineLock = false;
-            }
-        }
     }
 }

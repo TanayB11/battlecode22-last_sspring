@@ -38,6 +38,9 @@ public class SoldierController {
     static boolean goingToWaypt = false;
     static int numValidWaypoints;
 
+    static MapLocation nearestArch = null;
+    static MapLocation suicideLocation = null;
+
     static boolean isDying = false;
 
     static final int SURROUNDED_THRESHOLD = 5;
@@ -69,13 +72,13 @@ public class SoldierController {
 
         // if we're dying, return to be healed
         // consider ourselves dying until we're near full HP
-        if (isDying && rc.getHealth() > 0.9 * RobotType.SOLDIER.health) {
+        if (isDying && rc.getHealth() > 0.92 * RobotType.SOLDIER.health) {
             isDying = false;
         } else if (!isDying && rc.getHealth() < 0.4 * RobotType.SOLDIER.health) {
             isDying = true;
             goingToWaypt = false;
 
-            MapLocation nearestArch = getNearestFriendlyArch(rc);
+            nearestArch = getNearestFriendlyArch(rc);
             goal = nearestArch;
 
             // TODO
@@ -86,6 +89,23 @@ public class SoldierController {
             //Depending on size of line
 
         }
+
+        // Disintegrate or return to archon for healing
+//        if (isDying && rc.getHealth() < 0.3 * RobotType.SOLDIER.health && rc.canSenseLocation(nearestArch)) {
+//            // find best suicide location
+//            MapLocation[] possibleDisintLocs = rc.getAllLocationsWithinRadiusSquared(me, RobotType.SOLDIER.visionRadiusSquared);
+//            for (int i = 0; i < possibleDisintLocs.length; i++) {
+//                if (rc.senseLead(possibleDisintLocs[i]) == 0) {
+//                    suicideLocation = possibleDisintLocs[i];
+//                    goal = suicideLocation;
+//                    break;
+//                }
+//            }
+//
+//            if (me.equals(suicideLocation)) {
+//                rc.disintegrate();
+//            }
+//        }
 
         // if we're retreating/dying, set goal to null if we're close enough to archon
 
@@ -142,7 +162,6 @@ public class SoldierController {
             // 2.1 Attack strategy: attack-retreat like a fencer
 
             // implement move-attack-retreat decision tree
-                // TODO (TESTING): ensure rc.attack never throws exceptions, then replace all attacks with safeAttack
             if (rc.isActionReady()) {
                 if (enemyInRange) {
                     rc.attack(enemyLoc);

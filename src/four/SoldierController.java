@@ -158,7 +158,10 @@ public class SoldierController {
                 }
 
                 // Neutral positions (move sideways)
-                int lowestRubble = rc.senseRubble(rc.adjacentLocation(initPossibleDirs[bestIndex]));
+                int lowestRubble = Integer.MAX_VALUE;
+                if (bestIndex != -1) {
+                    lowestRubble = rc.senseRubble(rc.adjacentLocation(initPossibleDirs[bestIndex]));
+                }
                 if (lowestRubble > MIN_ACCEPTABLE_RUBBLE) {
                     Direction neutralDir1 = dirToTarget.rotateRight().rotateRight();
                     Direction neutralDir2 = dirToTarget.rotateLeft().rotateLeft();

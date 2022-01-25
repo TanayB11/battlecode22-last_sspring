@@ -11,12 +11,12 @@ public class Exploration {
         // generate a random location between 1 and 2 vision radii away from robot
         // 5 tries to get on the map, else just go to center of map
 
-        boolean coinFlip = sma.util.Miscellaneous.rng.nextBoolean();
+        boolean coinFlip = Miscellaneous.rng.nextBoolean();
 
         if (coinFlip) {
             for (int i = 0; i++ <= 5;) {
-                int x = sma.util.Miscellaneous.rng.nextInt(mapWidth);
-                int y = sma.util.Miscellaneous.rng.nextInt(mapHeight);
+                int x = Miscellaneous.rng.nextInt(mapWidth);
+                int y = Miscellaneous.rng.nextInt(mapHeight);
                 if (Math.pow(x, 2) + Math.pow(y, 2) > rc.getType().visionRadiusSquared) {
                     return new MapLocation(x, y);
                 }
@@ -47,8 +47,8 @@ public class Exploration {
         // generate a random location between 1 and 2 vision radii away from robot
         // 5 tries to get on the map, else just go to center of map
         for (int i = 0; i++ <= 5;) {
-            int x = four.util.Miscellaneous.rng.nextInt(mapWidth);
-            int y = four.util.Miscellaneous.rng.nextInt(mapHeight);
+            int x = Miscellaneous.rng.nextInt(mapWidth);
+            int y = Miscellaneous.rng.nextInt(mapHeight);
             if (Math.pow(x, 2) + Math.pow(y, 2) > rc.getType().visionRadiusSquared) {
                 return new MapLocation(x, y);
             }

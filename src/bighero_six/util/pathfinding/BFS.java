@@ -2,7 +2,7 @@ package bighero_six.util.pathfinding;
 
 import battlecode.common.*;
 
-import static four.util.SafeActions.safeMove;
+import static bighero_six.util.SafeActions.safeMove;
 
 public abstract class BFS {
     static final int BYTECODE_REMAINING = 1000;

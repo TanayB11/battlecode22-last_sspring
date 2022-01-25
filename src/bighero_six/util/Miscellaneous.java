@@ -1,6 +1,7 @@
 package bighero_six.util;
 
 import battlecode.common.*;
+import bighero_six.util.data_structures.RingBufferQueue;
 
 import java.util.Arrays;
 import java.util.Comparator;
@@ -11,6 +12,11 @@ import static bighero_six.util.SafeActions.safeMove;
 
 public class Miscellaneous {
     public static final Random rng = new Random();
+
+    // used for computing average income
+    static final int ROLLING_AVG_LENGTH = 10;
+    public static RingBufferQueue incomeAvgQ = new RingBufferQueue(ROLLING_AVG_LENGTH);
+    public static RingBufferQueue enemyIncomeAvgQ = new RingBufferQueue(ROLLING_AVG_LENGTH);
 
     public static final Direction[] directions = {
             Direction.NORTH,
@@ -33,7 +39,7 @@ public class Miscellaneous {
             case SOUTHWEST:    return 5;
             case WEST:         return 6;
             case NORTHWEST:    return 7;
-            default:           return -1;
+            default:           return rng.nextInt(8);
         }
     }
 
