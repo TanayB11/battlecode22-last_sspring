@@ -134,9 +134,6 @@ public class Communication {
     Notify other troops that something has happened
         0th bit is archon: priority spawner
         1st bit is labs: ok/not ok to transmute
-        2nd bit is "not rotational"
-        3rd bit is "not vertical"
-        4th bit is "not horizontal"
     */
 
     public static void throwFlag(RobotController rc, int bitShift) throws GameActionException {
