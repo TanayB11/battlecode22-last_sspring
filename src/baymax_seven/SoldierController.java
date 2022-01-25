@@ -49,8 +49,51 @@ public class SoldierController {
     static final int SURROUNDED_THRESHOLD = 5;
     static final int ACCEPTABLE_TARGET_LOC_RUBBLE = 50;
 
+    static int[] rubbleCounts = new int[1800];
+    static int[] rubbleCheckedLocations = new int[120];
+
+    static int symmetryType = 0;
+
     public static void runSoldier(RobotController rc) throws GameActionException {
         MapLocation me = rc.getLocation();
+
+        if (symmetryType == 0) {
+            int symmetryFlagCount = 0;
+            int determineWhich = 0;
+
+            if (checkFlag(rc, 2)) {
+                symmetryFlagCount += 1;
+                determineWhich += 1;
+            }
+
+            if (checkFlag(rc, 3)) {
+                symmetryFlagCount += 1;
+                determineWhich += 2;
+            }
+
+            if (checkFlag(rc, 4)) {
+                symmetryFlagCount += 1;
+                determineWhich += 3;
+            }
+
+            if (symmetryFlagCount == 2) {
+                if (determineWhich == 5) {
+                    symmetryType = 1;
+                } else if (determineWhich == 4) {
+                    symmetryType = 2;
+                } else {
+                    symmetryType = 3;
+                }
+            }
+        }
+
+        // redundancy exists for a reason :pleading_face:, some slight bytecode savings i think
+        if (symmetryType == 0) {
+            MapLocation[] visibleLocations = rc.getAllLocationsWithinRadiusSquared(me, 1000);
+            for (int i = 0; i < visibleLocations.length; i++) {
+                reportRubble(rc, visibleLocations[i]);
+            }
+        }
 
         // initialize
         if (bfs == null) {
@@ -266,5 +309,67 @@ public class SoldierController {
             return  nearbyAtkAllies;
         }
         return 0;
+    }
+
+    static void reportRubble(RobotController rc, MapLocation loc) throws GameActionException {
+        if (!isRubbleChecked(loc)) {
+            int squareIndex = loc.y * 60 + loc.x;
+
+            if (squareIndex % 2 == 0) {
+                rubbleCounts[squareIndex / 2] = (rubbleCounts[squareIndex / 2] & ~65280) | ((rc.senseRubble(loc)+1) << 8);
+            } else {
+                rubbleCounts[squareIndex / 2] = (rubbleCounts[squareIndex / 2] & ~255) | (rc.senseRubble(loc)+1);
+            }
+
+            updateSharedArraySymmetry(rc, loc);
+            markRubbleChecked(loc);
+        }
+    }
+
+    static void updateSharedArraySymmetry(RobotController rc, MapLocation reportedLoc) throws GameActionException {
+        int reportX = reportedLoc.x;
+        int reportY = reportedLoc.y;
+
+        MapLocation rotational = new MapLocation(reportY, reportX);
+        MapLocation vertical = new MapLocation(reportX, rc.getMapHeight() - reportY);
+        MapLocation horizontal = new MapLocation(rc.getMapWidth() - reportX, reportY);
+
+        int rotationalRubble = checkRubble(rotational);
+        int verticalRubble = checkRubble(vertical);
+        int horizontalRubble = checkRubble(horizontal);
+
+        if (rotationalRubble != 0 && rotationalRubble != rc.senseRubble(reportedLoc)) {
+            throwFlag(rc, 2);
+        }
+
+        if (verticalRubble != 0 && verticalRubble != rc.senseRubble(reportedLoc)) {
+            throwFlag(rc, 3);
+        }
+
+        if (horizontalRubble != 0 && verticalRubble != rc.senseRubble(reportedLoc)) {
+            throwFlag(rc,4);
+        }
+    }
+
+    static int checkRubble(MapLocation loc) {
+        int squareIndex = loc.x * 60 + loc.x;
+
+        if (squareIndex % 2 == 0) {
+            return ((rubbleCounts[squareIndex / 2] & 65280) >> 8);
+        } else {
+            return (rubbleCounts[squareIndex / 2] & 255);
+        }
+    }
+
+    static void markRubbleChecked(MapLocation loc) {
+        int arrayPos = loc.x / 2 + (loc.y < 32 ? 0 : 1);
+        int bitPos = loc.y % 32;
+        rubbleCheckedLocations[arrayPos] |= (1 << bitPos);
+    }
+
+    static boolean isRubbleChecked(MapLocation loc) {
+        int arrayPos = loc.x / 2 + (loc.y < 32 ? 0 : 1);
+        int bitPos = loc.y % 32;
+        return ((rubbleCheckedLocations[arrayPos] & (1 << bitPos)) > 0);
     }
 }
