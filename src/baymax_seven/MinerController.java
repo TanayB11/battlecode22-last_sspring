@@ -117,6 +117,13 @@ public class MinerController {
                 while (rc.canMineGold(mineLocation)) {
                     rc.mineGold(mineLocation);
                 }
+<<<<<<< Updated upstream
+=======
+
+<<<<<<< Updated upstream
+>>>>>>> Stashed changes
+=======
+>>>>>>> Stashed changes
                 while (rc.canMineLead(mineLocation) && rc.senseLead(mineLocation) > 1) {
                     rc.mineLead(mineLocation);
                 }

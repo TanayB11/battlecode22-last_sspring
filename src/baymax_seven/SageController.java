@@ -263,7 +263,6 @@ public class SageController {
         }
         return 0;
     }
-
     static void smartAttack(RobotController rc, RobotInfo targetEnemy, RobotInfo[] nearbyEnemies) throws GameActionException {
         RobotType targetType = targetEnemy.getType();
         int targetHealth = targetEnemy.getHealth();

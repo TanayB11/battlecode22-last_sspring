@@ -193,12 +193,19 @@ public class ArchonController {
             clearIndex(rc, ARCHON_COUNT_INDEX);
             clearIndex(rc, MINER_COUNT_INDEX);
             clearIndex(rc, SOLDIER_COUNT_INDEX);
+<<<<<<< Updated upstream
 
 //            // expire archon locations
 //            clearIndex(rc, 0);
 //            clearIndex(rc, 1);
 //            clearIndex(rc, 2);
 //            clearIndex(rc, 3);
+=======
+            clearIndex(rc, LAB_COUNT_INDEX);
+            clearIndex(rc, SAGE_COUNT_INDEX);
+
+            int currentTurn = rc.getRoundNum();
+>>>>>>> Stashed changes
 
             // Update income tracker queue
             int income = rc.getTeamLeadAmount(rc.getTeam()) - prevTurnLead;
