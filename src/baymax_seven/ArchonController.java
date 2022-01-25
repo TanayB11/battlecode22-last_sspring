@@ -21,6 +21,7 @@ public class ArchonController {
     // archon movement
     static BFS bfs = null;
     static MapLocation bestArchLoc = null;
+    static int turnsSincePortable = 0;
 
     // values updated regularly
     static int prevHP = Integer.MIN_VALUE;
@@ -39,8 +40,10 @@ public class ArchonController {
     static int currMinerSpawnDir = 0;
     static int[] minersInDir = {0, 0, 0, 0, 0, 0, 0, 0};
 
+    static int prevTarget = 0, turnsSinceEnemyEstablished = 0;
+
     // regularly resetting comms array goal
-    static final int ROUNDS_BEFORE_WIPING_GOAL = 40;
+    static final int ROUNDS_BEFORE_WIPING_TARGET = 40;
     static final int SOLDIER_THRESHOLD = 25;
     static MapLocation prevGoal = null;
     static MapLocation goal = null;
@@ -48,6 +51,9 @@ public class ArchonController {
 
     public static void runArchon(RobotController rc) throws GameActionException {
         MapLocation me = rc.getLocation();
+
+        // TODO: 50 turn time limit for transformation
+        // FIX TRANSFORMATION on chess
 
         /*
         Initialization
@@ -58,7 +64,7 @@ public class ArchonController {
         isAlpha = (readArchonCount(rc) == rc.getArchonCount());
 
         if (!isInitialized) {
-            bfs = new DroidBFS(rc); // TODO: change to archon BFS with higher radius
+            bfs = new DroidBFS(rc);
             archIndex = firstArchIndexEmpty(rc);
             writeOwnArchLoc(rc, archIndex);
             isInitialized = true;
@@ -82,7 +88,7 @@ public class ArchonController {
         }
 
         if (bestArchLoc != null && me.equals(bestArchLoc)) {
-            if (rc.isTransformReady()) {
+            if (rc.isTransformReady() && rc.getMode().equals(RobotMode.PORTABLE)) {
                 rc.transform();
                 bestArchLoc = null;
             }
@@ -194,8 +200,6 @@ public class ArchonController {
 //            clearIndex(rc, 2);
 //            clearIndex(rc, 3);
 
-            int currentTurn = rc.getRoundNum();
-
             // Update income tracker queue
             int income = rc.getTeamLeadAmount(rc.getTeam()) - prevTurnLead;
             incomeAvgQ.enqueue(income);
@@ -205,17 +209,14 @@ public class ArchonController {
             enemyIncomeAvgQ.enqueue(income);
             enemyPrevTurnLead = income;
 
-            goal = getGoal(rc);
-            // if the comms goal has updated
-            if (goal != null && !goal.equals(prevGoal)) {
-                prevGoal = goal;
-                goalExpiryDate = currentTurn + ROUNDS_BEFORE_WIPING_GOAL;
+            int currentTurn = rc.getRoundNum();
+            if (rc.readSharedArray(TARGET_ENEMY_INDEX) != prevTarget) {
+                prevTarget = rc.readSharedArray(TARGET_ENEMY_INDEX);
+                turnsSinceEnemyEstablished = currentTurn + ROUNDS_BEFORE_WIPING_TARGET;
             }
-
-            // if comms goal has expired
-            if (currentTurn == goalExpiryDate) {
-                prevGoal = null;
-                clearIndex(rc, TARGET_ENEMY_INDEX);
+            if (currentTurn == turnsSinceEnemyEstablished) {
+                prevTarget = 0;
+                rc.writeSharedArray(TARGET_ENEMY_INDEX, 0);
             }
         }
     }

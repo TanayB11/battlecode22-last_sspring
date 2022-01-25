@@ -32,6 +32,8 @@ public class MinerController {
         // add itself to the unit count
         minerReport(rc);
 
+        rc.setIndicatorString((exploreTarget!=null) ? exploreTarget.toString() : "NO EXPLORE TARGET");
+
         // set targets to null accordingly
         if (exploreTarget != null && rc.canSenseLocation(exploreTarget) && rc.senseLead(exploreTarget) < 2 && rc.senseGold(exploreTarget) == 0) {
             exploreTarget = null;

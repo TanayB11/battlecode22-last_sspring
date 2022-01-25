@@ -43,6 +43,7 @@ public class SoldierController {
 
     static MapLocation nearestArch = null;
     static MapLocation templeOfSacrifice = null;
+    static boolean reachedHealLoc = false;
 
     static boolean isDying = false;
 
@@ -80,9 +81,13 @@ public class SoldierController {
         } else if (!isDying && rc.getHealth() < 0.4 * RobotType.SOLDIER.health) {
             isDying = true;
             goingToWaypt = false;
-
             nearestArch = getNearestFriendlyArch(rc);
             goal = nearestArch;
+        }
+
+        if (isDying && rc.canSenseLocation(nearestArch)) {
+            goal = me;
+            reachedHealLoc = true;
         }
 
         // Disintegrate or return to archon for healing
@@ -120,6 +125,7 @@ public class SoldierController {
 
         // avoid a waypoint being a high rubble square
         if (
+            !reachedHealLoc &&
             goingToWaypt && goal != null &&
             rc.canSenseLocation(goal) && rc.senseRubble(goal) > ACCEPTABLE_TARGET_LOC_RUBBLE
         ) {

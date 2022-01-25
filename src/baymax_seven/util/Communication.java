@@ -56,17 +56,6 @@ public class Communication {
         rc.writeSharedArray(index, (me.x << 10) | (me.y << 4));
     }
 
-    // Build queue
-//    public static void enqueueBuild(RobotController rc, int index) throws GameActionException {
-//        // 44444
-//        // 001 -> miner, 010 -> soldier, 011 -> builder, 100 -> sage
-//        // 0001 | 000 000 000 111
-//        //                    111
-//        // 0001 | 000 000 000 111
-//        // 0001 | 000 000 000 111
-//        // (bq & ~(0 << 2)) << (3 * counter)
-//    }
-
     /*
     Section 2: Miners
     */

@@ -180,6 +180,6 @@ public class Miscellaneous {
             }
         }
 
-        return bestBuildingLoc;
+        return (bestBuildingLoc) != null ? bestBuildingLoc : rc.getLocation();
     }
 }

@@ -29,11 +29,11 @@ public class Exploration {
             } else if (choice == 1){
                 return new MapLocation(0, 0);
             } else if (choice == 2) {
-                return new MapLocation(0, mapHeight);
+                return new MapLocation(0, mapHeight-1);
             } else if (choice == 3) {
-                return new MapLocation(mapHeight, 0);
+                return new MapLocation(mapHeight-1, 0);
             } else {
-                return new MapLocation(mapHeight, mapHeight);
+                return new MapLocation(mapHeight-1, mapHeight-1);
             }
         }
 

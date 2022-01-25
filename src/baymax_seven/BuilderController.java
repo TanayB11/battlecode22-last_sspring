@@ -1,11 +1,11 @@
 package baymax_seven;
 
 import battlecode.common.*;
-import five.util.pathfinding.BFS;
-import five.util.pathfinding.DroidBFS;
+import baymax_seven.util.pathfinding.BFS;
+import baymax_seven.util.pathfinding.DroidBFS;
 
-import static five.util.Communication.reportEnemy;
-import static five.util.SafeActions.safeBuild;
+import static baymax_seven.util.Communication.reportEnemy;
+import static baymax_seven.util.SafeActions.safeBuild;
 
 public class BuilderController {
 
