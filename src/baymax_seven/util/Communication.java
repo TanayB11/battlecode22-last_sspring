@@ -10,6 +10,8 @@ public class Communication {
     public final static int ARCHON_COUNT_INDEX = 4;
     public final static int MINER_COUNT_INDEX = 5;
     public final static int SOLDIER_COUNT_INDEX = 6;
+    public final static int LAB_COUNT_INDEX = 7;
+    public final static int SAGE_COUNT_INDEX = 8;
     // 7-10 are for the other units
     public final static int FLAG_INDEX = 11;
     public final static int TARGET_ENEMY_INDEX = 12;
@@ -90,7 +92,31 @@ public class Communication {
     }
 
     /*
-    Section 4: Enemy reporting
+    Section 4: Labs
+    */
+
+    public static void labReport(RobotController rc) throws GameActionException {
+        rc.writeSharedArray(LAB_COUNT_INDEX, rc.readSharedArray(LAB_COUNT_INDEX) + 1);
+    }
+
+    public static int readNumLabs(RobotController rc) throws GameActionException {
+        return rc.readSharedArray(LAB_COUNT_INDEX);
+    }
+
+    /*
+    Section 5: Sages
+    */
+
+    public static void sageReport(RobotController rc) throws GameActionException {
+        rc.writeSharedArray(SAGE_COUNT_INDEX, rc.readSharedArray(SAGE_COUNT_INDEX) + 1);
+    }
+
+    public static int readNumSages(RobotController rc) throws GameActionException {
+        return rc.readSharedArray(SAGE_COUNT_INDEX);
+    }
+
+    /*
+    Section 6: Enemy reporting
     */
 
     public static void writeEnemy(RobotController rc, RobotType type, MapLocation locationSpotted) throws GameActionException {
@@ -130,7 +156,7 @@ public class Communication {
     }
 
     /*
-    Section 5: Flag throwing, utilities
+    Section 7: Flag throwing, utilities
     Notify other troops that something has happened
         0th bit is archon: priority spawner
         1st bit is labs: ok/not ok to transmute

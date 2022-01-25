@@ -4,8 +4,7 @@ import battlecode.common.*;
 import baymax_seven.util.pathfinding.BFS;
 import baymax_seven.util.pathfinding.DroidBFS;
 
-import static baymax_seven.util.Communication.checkFlag;
-import static baymax_seven.util.Communication.reportEnemy;
+import static baymax_seven.util.Communication.*;
 import static baymax_seven.util.Miscellaneous.getBestBuildingLoc;
 
 public class LabController {
@@ -17,6 +16,7 @@ public class LabController {
 
     static void runLab(RobotController rc) throws GameActionException {
         MapLocation me = rc.getLocation();
+        labReport(rc);
 
         // initialize bfs
         if (bfs == null) {

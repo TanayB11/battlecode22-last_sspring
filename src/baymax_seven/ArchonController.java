@@ -54,15 +54,14 @@ public class ArchonController {
         */
 
         // initialize
+        // TODO: test
+        if (bfs == null) {
+            bfs = new DroidBFS(rc);
+        }
         archonReport(rc);
         isAlpha = (readArchonCount(rc) == rc.getArchonCount());
-
-        if (!isInitialized) {
-            bfs = new DroidBFS(rc); // TODO: change to archon BFS with higher radius
-            archIndex = firstArchIndexEmpty(rc);
-            writeOwnArchLoc(rc, archIndex);
-            isInitialized = true;
-        }
+        archIndex = firstArchIndexEmpty(rc);
+        writeOwnArchLoc(rc, archIndex);
 
         int numMiners = readNumMiners(rc);
         int numSoldiers = readNumSoldiers(rc);
@@ -187,12 +186,14 @@ public class ArchonController {
             clearIndex(rc, ARCHON_COUNT_INDEX);
             clearIndex(rc, MINER_COUNT_INDEX);
             clearIndex(rc, SOLDIER_COUNT_INDEX);
+            clearIndex(rc, LAB_COUNT_INDEX);
+            clearIndex(rc, SAGE_COUNT_INDEX);
 
-//            // expire archon locations
-//            clearIndex(rc, 0);
-//            clearIndex(rc, 1);
-//            clearIndex(rc, 2);
-//            clearIndex(rc, 3);
+            // expire archon locations
+            clearIndex(rc, 0);
+            clearIndex(rc, 1);
+            clearIndex(rc, 2);
+            clearIndex(rc, 3);
 
             int currentTurn = rc.getRoundNum();
 
