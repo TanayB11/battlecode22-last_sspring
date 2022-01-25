@@ -1,13 +1,15 @@
-package bighero_six;
+package baymax_seven;
 
 import battlecode.common.*;
+import baymax_seven.util.pathfinding.BFS;
+import baymax_seven.util.pathfinding.DroidBFS;
 
 import java.util.Arrays;
 import java.util.Comparator;
 
-import static bighero_six.util.Communication.*;
-import static bighero_six.util.Miscellaneous.*;
-import static bighero_six.util.SafeActions.safeBuild;
+import static baymax_seven.util.Communication.*;
+import static baymax_seven.util.Miscellaneous.*;
+import static baymax_seven.util.SafeActions.safeBuild;
 
 
 public class ArchonController {
@@ -15,6 +17,10 @@ public class ArchonController {
     static int archIndex;
     static boolean isAlpha = false;
     static boolean isPrioritySpawner = false;
+
+    // archon movement
+    static BFS bfs = null;
+    static MapLocation bestArchLoc = null;
 
     // values updated regularly
     static int prevHP = Integer.MIN_VALUE;
@@ -52,6 +58,7 @@ public class ArchonController {
         isAlpha = (readArchonCount(rc) == rc.getArchonCount());
 
         if (!isInitialized) {
+            bfs = new DroidBFS(rc); // TODO: change to archon BFS with higher radius
             archIndex = firstArchIndexEmpty(rc);
             writeOwnArchLoc(rc, archIndex);
             isInitialized = true;
@@ -69,7 +76,19 @@ public class ArchonController {
         Soldier rush visible enemy archons
         */
 
-        // 1. If we see an enemy archon, soldier rush
+        // 1. If we're on too high of a rubble square, move to nearest acceptable location
+        if (bestArchLoc == null) {
+            bestArchLoc = getBestBuildingLoc(rc);
+        }
+
+        if (bestArchLoc != null && me.equals(bestArchLoc)) {
+            if (rc.isTransformReady()) {
+                rc.transform();
+                bestArchLoc = null;
+            }
+        }
+
+        // 2. If we see an enemy archon, soldier rush
         //    Also report highest priority enemy visible
         RobotInfo[] nearbyEnemies = rc.senseNearbyRobots(-1, rc.getTeam().opponent());
         RobotInfo priorityEnemy = null;
@@ -89,7 +108,7 @@ public class ArchonController {
             reportEnemy(rc, priorityEnemy.getType(), priorityEnemy.getLocation());
         }
 
-        // 2. If we're losing health or if we see an enemy archon, throw flag
+        // 3. If we're losing health or if we see an enemy archon, throw flag
         isPrioritySpawner = rc.getHealth() < prevHP ||
             (priorityEnemy != null && priorityEnemy.getType().equals(RobotType.ARCHON));
 
@@ -122,80 +141,47 @@ public class ArchonController {
         Robot build order, healing
         */
 
-        // Healing
-
-//        RobotInfo[] nearbyAllies = rc.senseNearbyRobots(-1, rc.getTeam());
-//        if (nearbyAllies.length > 0) {
-//            Arrays.sort(nearbyAllies, Comparator.comparingInt(rbt -> {
-//                try {
-//                    return rbt.getHealth();
-//                } catch (Exception e) {
-//                    // prioritize highest HP robots
-//                    return Integer.MIN_VALUE;
-//                }
-//            }));
-//            for (int i = nearbyAllies.length - 1; i > 0; i--) {
-//                if (
-//                    nearbyAllies[i].getType().equals(RobotType.SOLDIER) &&
-//                    nearbyAllies[i].getHealth() < .92*RobotType.SOLDIER.health
-//                ) {
-//                    if (rc.canRepair(nearbyAllies[i].getLocation())) {
-//                        rc.repair(nearbyAllies[i].getLocation());
-//                    }
-//                }
-//            }
-//        }
-
         // Build order
         int initMinersHeuristic = Math.max(MIN_MINERS, rc.getMapWidth() * rc.getMapHeight() / 375);
+        boolean spawnedSuccessfully = false;
+
         if (numMiners < initMinersHeuristic) {
             initVisibleLeadAndMinersInDir(rc, me);
-            spawnMinersToLead(rc, initMinersHeuristic);
+            spawnedSuccessfully = spawnMinersToLead(rc, initMinersHeuristic);
         } else if (numSoldiers < initMinersHeuristic) {
             smartSpawnSoldier(rc, me);
+        } else if (bestArchLoc != null && !me.equals(bestArchLoc)) {
+            if (rc.getMode().equals(RobotMode.TURRET)) {
+                if (rc.isTransformReady()) {
+                    rc.transform();
+                }
+            } else {
+                bfs.move(bestArchLoc);
+            }
         } else if (numSoldiers < SOLDIER_THRESHOLD) {
             if (rc.getRoundNum() % 3 != 2) {
-                smartSpawnSoldier(rc, me);
+               spawnedSuccessfully = smartSpawnSoldier(rc, me);
             } else {
-                spawnMinersToLead(rc, 1);
+               spawnedSuccessfully = spawnMinersToLead(rc, 1);
             }
         } else {
             if (rc.getRoundNum() % 4 != 3) {
-                smartSpawnSoldier(rc, me);
+                spawnedSuccessfully = smartSpawnSoldier(rc, me);
             } else {
-                spawnMinersToLead(rc, 1);
+                spawnedSuccessfully = spawnMinersToLead(rc, 1);
             }
         }
 
-        // Spawn soldiers (old)
-
-        // TODO: use the below code for non-soldier-miner, saving up
-        // determine # of miners to spawn a soldier every 5 turns
-        // we always want to meet this production rate
-        // miners * Pb_avg/miner-t = 15Pb/t = 75Pb/5t -> miners = 15Pb/t * miner-t/Pb_avg
-//        int minersToMaintainSoldierEq = (int)(15 * rc.getMapWidth() * rc.getMapHeight() / 3600 / incomeAvgQ.calcAverageVal());
-//
-//        // then add onto that whatever else we want
-//        // TODO: change to make this variable, based on some strategy
-//        int leadDesiredPerTurn = 180 / 10; // say we want 180 lead over the next 10 turns
-//        int addtlMiners = (int)(leadDesiredPerTurn / incomeAvgQ.calcAverageVal());
-//
-//        if (numMiners < minersToMaintainSoldierEq + addtlMiners) {
-//            initVisibleLeadAndMinersInDir(rc, me);
-//            spawnMinersToLead(rc, initMinersHeuristic);
-//        } else if (rc.getTeamLeadAmount(rc.getTeam()) > 180 + 75) { // TODO: don't hardcode (75 is soldier build cost)
-//            safeBuild(rc, RobotType.SOLDIER, directions[rng.nextInt(directions.length)]);
-//        } // rest of lead goes into stockpile
+        // healing if we couldn't spawn anything this turn
+        if (!spawnedSuccessfully) {
+            healNearbyAllies(rc);
+        }
 
         /*
         Alpha archon responsibilities:
         Clear troop counts, update average income queue
         Goal expiry handling
         */
-
-        // TODO: fix income average and comm the value
-//        if (archIndex == 0) {
-//        }
 
         if (isAlpha) {
             clearIndex(rc, ARCHON_COUNT_INDEX);
@@ -262,12 +248,19 @@ public class ArchonController {
             }
         } else if (teamLead < 3 * SOLDIER_COST) {
             // spawn 2 soldier from 2 closest archs
-            if (archs[0].equals(me) || archs[1].equals(me)) {
+            if (
+                (archs[0] != null && archs[0].equals(me)) ||
+                (archs[1] != null && archs[1].equals(me))
+            ) {
                 return safeBuild(rc, RobotType.SOLDIER, dirToSpawn);
             }
         } else if (teamLead < 4 * SOLDIER_COST) {
             // spawn 3 soldier from 3 closest archs
-            if (archs[0].equals(me) || archs[1].equals(me) || archs[2].equals(me)) {
+            if (
+                (archs[0] != null && archs[0].equals(me)) ||
+                (archs[1] != null && archs[1].equals(me)) ||
+                (archs[2] != null && archs[2].equals(me))
+            ) {
                 return safeBuild(rc, RobotType.SOLDIER, dirToSpawn);
             }
         }
@@ -296,7 +289,7 @@ public class ArchonController {
         }
     }
 
-    static void spawnMinersToLead(RobotController rc, int numMinersToSpawn) throws GameActionException {
+    static boolean spawnMinersToLead(RobotController rc, int numMinersToSpawn) throws GameActionException {
         // assign # of miners in each dir proportional to amt of lead
         if (visibleLead > 0) {
             for (int i = 0; i < minersInDir.length; i++) {
@@ -312,9 +305,37 @@ public class ArchonController {
         // spawn the miners
         if (minersInDir[currMinerSpawnDir] > 0 && safeBuild(rc, RobotType.MINER, directions[currMinerSpawnDir])) {
             minersInDir[currMinerSpawnDir]--;
+            return true;
         } else if (minersInDir[currMinerSpawnDir] == 0) {
             currMinerSpawnDir++;
             currMinerSpawnDir %= 8; // keeps spawning in a cyclical order
+        }
+        return false;
+    }
+
+    static void healNearbyAllies(RobotController rc) throws GameActionException {
+        RobotInfo[] nearbyAllies = rc.senseNearbyRobots(-1, rc.getTeam());
+        if (nearbyAllies.length > 0) {
+            rc.setIndicatorString("Hello, I'm Baymax, your personal healthcare companion!");
+            Arrays.sort(nearbyAllies, Comparator.comparingInt(bot -> {
+                try {
+                    return bot.getHealth();
+                } catch (Exception e) {
+                    // prioritize highest HP robots
+                    return Integer.MIN_VALUE;
+                }
+            }));
+
+            for (int i = nearbyAllies.length - 1; i > 0; i--) {
+                if (
+                    nearbyAllies[i].getType().equals(RobotType.SOLDIER) &&
+                    nearbyAllies[i].getHealth() < .92*RobotType.SOLDIER.health
+                ) {
+                    if (rc.canRepair(nearbyAllies[i].getLocation())) {
+                        rc.repair(nearbyAllies[i].getLocation());
+                    }
+                }
+            }
         }
     }
 }
