@@ -99,8 +99,8 @@ public class ArchonController {
                     priorityEnemy = nearbyEnemies[i];
                     break;
                 } else if (
-                    priorityEnemy == null ||
-                    getReportEnemyPriority(enemyType) > getReportEnemyPriority(priorityEnemy.getType())
+                        priorityEnemy == null ||
+                                getReportEnemyPriority(enemyType) > getReportEnemyPriority(priorityEnemy.getType())
                 ) {
                     priorityEnemy = nearbyEnemies[i];
                 }
@@ -110,7 +110,7 @@ public class ArchonController {
 
         // 3. If we're losing health or if we see an enemy archon, throw flag
         isPrioritySpawner = rc.getHealth() < prevHP ||
-            (priorityEnemy != null && priorityEnemy.getType().equals(RobotType.ARCHON));
+                (priorityEnemy != null && priorityEnemy.getType().equals(RobotType.ARCHON));
 
         // Spawns towards enemies
         if (isPrioritySpawner) {
@@ -125,11 +125,11 @@ public class ArchonController {
                 spawnMinersToLead(rc, MIN_MINERS);
             } else {
                 Direction dirToBuild = (
-                    priorityEnemy != null &&
-                    rc.canBuildRobot(RobotType.SOLDIER, me.directionTo(priorityEnemyLocation))
+                        priorityEnemy != null &&
+                                rc.canBuildRobot(RobotType.SOLDIER, me.directionTo(priorityEnemyLocation))
                 ) ?
-                me.directionTo(priorityEnemyLocation) :
-                directions[rng.nextInt(directions.length)];
+                        me.directionTo(priorityEnemyLocation) :
+                        directions[rng.nextInt(directions.length)];
                 safeBuild(rc, RobotType.SOLDIER, dirToBuild);
             }
         } else {
@@ -160,9 +160,9 @@ public class ArchonController {
             }
         } else if (numSoldiers < SOLDIER_THRESHOLD) {
             if (rc.getRoundNum() % 3 != 2) {
-               spawnedSuccessfully = smartSpawnSoldier(rc, me);
+                spawnedSuccessfully = smartSpawnSoldier(rc, me);
             } else {
-               spawnedSuccessfully = spawnMinersToLead(rc, 1);
+                spawnedSuccessfully = spawnMinersToLead(rc, 1);
             }
         } else {
             if (rc.getRoundNum() % 4 != 3) {
@@ -249,17 +249,17 @@ public class ArchonController {
         } else if (teamLead < 3 * SOLDIER_COST) {
             // spawn 2 soldier from 2 closest archs
             if (
-                (archs[0] != null && archs[0].equals(me)) ||
-                (archs[1] != null && archs[1].equals(me))
+                    (archs[0] != null && archs[0].equals(me)) ||
+                            (archs[1] != null && archs[1].equals(me))
             ) {
                 return safeBuild(rc, RobotType.SOLDIER, dirToSpawn);
             }
         } else if (teamLead < 4 * SOLDIER_COST) {
             // spawn 3 soldier from 3 closest archs
             if (
-                (archs[0] != null && archs[0].equals(me)) ||
-                (archs[1] != null && archs[1].equals(me)) ||
-                (archs[2] != null && archs[2].equals(me))
+                    (archs[0] != null && archs[0].equals(me)) ||
+                            (archs[1] != null && archs[1].equals(me)) ||
+                            (archs[2] != null && archs[2].equals(me))
             ) {
                 return safeBuild(rc, RobotType.SOLDIER, dirToSpawn);
             }
@@ -316,7 +316,6 @@ public class ArchonController {
     static void healNearbyAllies(RobotController rc) throws GameActionException {
         RobotInfo[] nearbyAllies = rc.senseNearbyRobots(-1, rc.getTeam());
         if (nearbyAllies.length > 0) {
-            rc.setIndicatorString("Hello, I'm Baymax, your personal healthcare companion!");
             Arrays.sort(nearbyAllies, Comparator.comparingInt(bot -> {
                 try {
                     return bot.getHealth();
@@ -328,9 +327,10 @@ public class ArchonController {
 
             for (int i = nearbyAllies.length - 1; i > 0; i--) {
                 if (
-                    nearbyAllies[i].getType().equals(RobotType.SOLDIER) &&
-                    nearbyAllies[i].getHealth() < .92*RobotType.SOLDIER.health
+                        nearbyAllies[i].getType().equals(RobotType.SOLDIER) &&
+                                nearbyAllies[i].getHealth() < .92*RobotType.SOLDIER.health
                 ) {
+                    rc.setIndicatorString("Hello, I'm Baymax, your personal healthcare companion!");
                     if (rc.canRepair(nearbyAllies[i].getLocation())) {
                         rc.repair(nearbyAllies[i].getLocation());
                     }
