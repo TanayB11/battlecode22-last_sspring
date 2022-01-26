@@ -1,4 +1,4 @@
-package baymax_seven.util;
+package baymax_seven_old.util;
 
 import battlecode.common.GameActionException;
 import battlecode.common.MapLocation;
@@ -12,7 +12,6 @@ public class Communication {
     public final static int SOLDIER_COUNT_INDEX = 6;
     public final static int LAB_COUNT_INDEX = 7;
     public final static int SAGE_COUNT_INDEX = 8;
-    public final static int BUILDER_COUNT_INDEX = 9;
     // 7-10 are for the other units
     public final static int FLAG_INDEX = 11;
     public final static int TARGET_ENEMY_INDEX = 12;
@@ -103,14 +102,6 @@ public class Communication {
 
     public static int readNumSages(RobotController rc) throws GameActionException {
         return rc.readSharedArray(SAGE_COUNT_INDEX);
-    }
-
-    public static void builderReport(RobotController rc) throws GameActionException {
-        rc.writeSharedArray(BUILDER_COUNT_INDEX, rc.readSharedArray(BUILDER_COUNT_INDEX) + 1);
-    }
-
-    public static int readNumBuilders(RobotController rc) throws GameActionException {
-        return rc.readSharedArray(BUILDER_COUNT_INDEX);
     }
 
     /*

@@ -1,14 +1,15 @@
-package baymax_seven;
+package baymax_seven_old;
 
 import battlecode.common.*;
-import baymax_seven.util.pathfinding.BFS;
-import baymax_seven.util.pathfinding.DroidBFS;
+import baymax_seven_old.util.pathfinding.BFS;
+import baymax_seven_old.util.pathfinding.DroidBFS;
 
-import static baymax_seven.util.Communication.*;
-import static baymax_seven.util.Miscellaneous.getBestBuildingLoc;
+import static baymax_seven_old.util.Communication.*;
+import static baymax_seven_old.util.Miscellaneous.getBestBuildingLoc;
 
 public class LabController {
     static final int NEARBY_ALLIES_THRESHOLD = 5;
+    static final int MOVEMENT_RUBBLE_THRESHOLD = 40;
 
     static MapLocation bestLabLoc = null;
     static BFS bfs = null;
@@ -37,7 +38,7 @@ public class LabController {
 
 
         if (bestLabLoc != null && me.equals(bestLabLoc)) {
-            if (rc.isTransformReady() && rc.getMode().equals(RobotMode.PORTABLE)) {
+            if (rc.isTransformReady()) {
                 rc.transform();
                 bestLabLoc = null;
             }
@@ -52,16 +53,12 @@ public class LabController {
                 bfs.move(bestLabLoc);
             }
         }
-
-        if (rc.getMode().equals(RobotMode.TURRET)) {
-            turretModeSequence(rc);
-        }
     }
 
     static void turretModeSequence(RobotController rc) throws GameActionException {
         // Transmute when the number of nearby allies is less than the threshold
         RobotInfo[] nearbyAllies = rc.senseNearbyRobots(-1, rc.getTeam());
-        if (rc.canTransmute() && nearbyAllies.length <= NEARBY_ALLIES_THRESHOLD) {
+        if (checkFlag(rc, 1) && rc.canTransmute() && nearbyAllies.length <= NEARBY_ALLIES_THRESHOLD) {
             rc.transmute();
         }
     }

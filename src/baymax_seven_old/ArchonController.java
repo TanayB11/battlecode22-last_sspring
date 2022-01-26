@@ -1,15 +1,15 @@
-package baymax_seven;
+package baymax_seven_old;
 
 import battlecode.common.*;
-import baymax_seven.util.pathfinding.BFS;
-import baymax_seven.util.pathfinding.DroidBFS;
+import baymax_seven_old.util.pathfinding.BFS;
+import baymax_seven_old.util.pathfinding.DroidBFS;
 
 import java.util.Arrays;
 import java.util.Comparator;
 
-import static baymax_seven.util.Communication.*;
-import static baymax_seven.util.Miscellaneous.*;
-import static baymax_seven.util.SafeActions.safeBuild;
+import static baymax_seven_old.util.Communication.*;
+import static baymax_seven_old.util.Miscellaneous.*;
+import static baymax_seven_old.util.SafeActions.safeBuild;
 
 
 public class ArchonController {
@@ -18,11 +18,9 @@ public class ArchonController {
     static boolean isAlpha = false;
     static boolean isPrioritySpawner = false;
 
-
     // archon movement
     static BFS bfs = null;
     static MapLocation bestArchLoc = null;
-    static int turnsSincePortable = 0;
 
     // values updated regularly
     static int prevHP = Integer.MIN_VALUE;
@@ -32,6 +30,9 @@ public class ArchonController {
     static int prevTurnLead = 0;
     static int enemyPrevTurnLead = 0;
     static boolean isInitialized = false;
+
+    // for build order
+    static final int SOLDIER_COST = RobotType.SOLDIER.buildCostLead;
 
     // determine directions to spawn miners
     static int visibleLead = -1;
@@ -49,9 +50,6 @@ public class ArchonController {
 
     public static void runArchon(RobotController rc) throws GameActionException {
         MapLocation me = rc.getLocation();
-
-        // TODO: 50 turn time limit for transformation
-        // FIX TRANSFORMATION on chess
 
         /*
         Initialization
@@ -86,7 +84,7 @@ public class ArchonController {
         }
 
         if (bestArchLoc != null && me.equals(bestArchLoc)) {
-            if (rc.isTransformReady() && rc.getMode().equals(RobotMode.PORTABLE)) {
+            if (rc.isTransformReady()) {
                 rc.transform();
                 bestArchLoc = null;
             }
@@ -148,11 +146,12 @@ public class ArchonController {
         // Build order
         int initMinersHeuristic = Math.max(MIN_MINERS, rc.getMapWidth() * rc.getMapHeight() / 375);
         boolean spawnedSuccessfully = false;
-        Direction randomDir = directions[rng.nextInt(directions.length)];
 
-        if (numMiners < MIN_MINERS) {
+        if (numMiners < initMinersHeuristic) {
             initVisibleLeadAndMinersInDir(rc, me);
             spawnedSuccessfully = spawnMinersToLead(rc, initMinersHeuristic);
+        } else if (numSoldiers < initMinersHeuristic) {
+            smartSpawnSoldier(rc, me);
         } else if (bestArchLoc != null && !me.equals(bestArchLoc)) {
             if (rc.getMode().equals(RobotMode.TURRET)) {
                 if (rc.isTransformReady()) {
@@ -161,51 +160,19 @@ public class ArchonController {
             } else {
                 bfs.move(bestArchLoc);
             }
-        } else if (readNumBuilders(rc) == 0 && (rc.getRobotCount() - rc.getArchonCount()) < 5) {
-            spawnedSuccessfully = safeBuild(rc, RobotType.BUILDER, directions[rng.nextInt(directions.length)]);
-        } else if (readNumLabs(rc) > 0) {
-            if (rc.canBuildRobot(RobotType.SAGE, randomDir)) {
-                spawnedSuccessfully = smartSpawnAtkUnit(rc, me, RobotType.SAGE);
-            } else { // TODO: tweak
-                if ((numMiners < 2.5 * initMinersHeuristic) && (rc.getRoundNum() % 5 == 1 || rc.getRoundNum() % 5 == 2)) {
-                    spawnedSuccessfully = safeBuild(rc, RobotType.MINER, randomDir);
-                } else {
-                    spawnedSuccessfully = smartSpawnAtkUnit(rc, me, RobotType.SOLDIER);
-                }
+        } else if (numSoldiers < SOLDIER_THRESHOLD) {
+            if (rc.getRoundNum() % 3 != 2) {
+                spawnedSuccessfully = smartSpawnSoldier(rc, me);
+            } else {
+                spawnedSuccessfully = spawnMinersToLead(rc, 1);
+            }
+        } else {
+            if (rc.getRoundNum() % 4 != 3) {
+                spawnedSuccessfully = smartSpawnSoldier(rc, me);
+            } else {
+                spawnedSuccessfully = spawnMinersToLead(rc, 1);
             }
         }
-
-        // old build order (not optimized for sages/builders/labs
-//        if (numMiners < initMinersHeuristic) {
-//            initVisibleLeadAndMinersInDir(rc, me);
-//            spawnedSuccessfully = spawnMinersToLead(rc, initMinersHeuristic);
-//        } else if (numSoldiers < initMinersHeuristic) {
-//            smartSpawnAtkUnit(rc, me, RobotType.SOLDIER);
-//        } else if (bestArchLoc != null && !me.equals(bestArchLoc)) {
-//            if (rc.getMode().equals(RobotMode.TURRET)) {
-//                if (rc.isTransformReady()) {
-//                    rc.transform();
-//                }
-//            } else {
-//                bfs.move(bestArchLoc);
-//            }
-//        } else if (readNumBuilders(rc) == 0 && (rc.getRobotCount() - rc.getArchonCount()) < initMinersHeuristic + 1) { // spawn a singular builder
-//            safeBuild(rc, RobotType.BUILDER, directions[rng.nextInt(directions.length)]);
-//        } else if (rc.canBuildRobot(RobotType.SAGE, randomDir)) { // if we can spawn a sage, spawn a sage
-//            rc.buildRobot(RobotType.SAGE, randomDir);
-//        } else if (readNumLabs(rc) > 0 && numSoldiers < SOLDIER_THRESHOLD) {
-//            if (rc.getRoundNum() % 3 != 2) {
-//                spawnedSuccessfully = smartSpawnAtkUnit(rc, me, RobotType.SOLDIER);
-//            } else {
-//                spawnedSuccessfully = spawnMinersToLead(rc, 1);
-//            }
-//        } else if (readNumLabs(rc) > 0){ // save lead until our one lab is built
-//            if (rc.getRoundNum() % 4 != 3) {
-//                spawnedSuccessfully = smartSpawnAtkUnit(rc, me, RobotType.SOLDIER);
-//            } else {
-//                spawnedSuccessfully = spawnMinersToLead(rc, 1);
-//            }
-//        }
 
         // healing if we couldn't spawn anything this turn
         if (!spawnedSuccessfully) {
@@ -222,9 +189,12 @@ public class ArchonController {
             clearIndex(rc, ARCHON_COUNT_INDEX);
             clearIndex(rc, MINER_COUNT_INDEX);
             clearIndex(rc, SOLDIER_COUNT_INDEX);
-            clearIndex(rc, BUILDER_COUNT_INDEX);
-            clearIndex(rc, LAB_COUNT_INDEX);
-            clearIndex(rc, SAGE_COUNT_INDEX);
+
+//            // expire archon locations
+//            clearIndex(rc, 0);
+//            clearIndex(rc, 1);
+//            clearIndex(rc, 2);
+//            clearIndex(rc, 3);
 
             // Update income tracker queue
             int income = rc.getTeamLeadAmount(rc.getTeam()) - prevTurnLead;
@@ -247,10 +217,8 @@ public class ArchonController {
         }
     }
 
-    private static boolean smartSpawnAtkUnit(RobotController rc, MapLocation me, RobotType type) throws GameActionException {
+    private static boolean smartSpawnSoldier(RobotController rc, MapLocation me) throws GameActionException {
         int teamLead = rc.getTeamLeadAmount(rc.getTeam());
-
-        int cost = (type.equals(RobotType.SAGE)) ? type.buildCostGold : type.buildCostLead;
 
         MapLocation[] archs = new MapLocation[]{
                 readArchLoc(rc, 0),
@@ -270,31 +238,31 @@ public class ArchonController {
         }));
 
         Direction dirToSpawn = goal != null ? me.directionTo(goal) : directions[rng.nextInt(directions.length)];
-        if (teamLead < 2 * cost) {
-            // spawn 1 unit from closest arch
+        if (teamLead < 2 * SOLDIER_COST) {
+            // spawn 1 soldier from closest arch
             if (archs[0].equals(me)) {
-                return safeBuild(rc, type, dirToSpawn);
+                return safeBuild(rc, RobotType.SOLDIER, dirToSpawn);
             }
-        } else if (teamLead < 3 * cost) {
-            // spawn 2 units from 2 closest archs
+        } else if (teamLead < 3 * SOLDIER_COST) {
+            // spawn 2 soldier from 2 closest archs
             if (
                     (archs[0] != null && archs[0].equals(me)) ||
                             (archs[1] != null && archs[1].equals(me))
             ) {
-                return safeBuild(rc, type, dirToSpawn);
+                return safeBuild(rc, RobotType.SOLDIER, dirToSpawn);
             }
-        } else if (teamLead < 4 * cost) {
-            // spawn 3 units from 3 closest archs
+        } else if (teamLead < 4 * SOLDIER_COST) {
+            // spawn 3 soldier from 3 closest archs
             if (
                     (archs[0] != null && archs[0].equals(me)) ||
                             (archs[1] != null && archs[1].equals(me)) ||
                             (archs[2] != null && archs[2].equals(me))
             ) {
-                return safeBuild(rc, type, dirToSpawn);
+                return safeBuild(rc, RobotType.SOLDIER, dirToSpawn);
             }
         }
-        // spawn 4 units from all archs
-        return safeBuild(rc, type, dirToSpawn);
+        // spawn 4 soldiers from all archs
+        return safeBuild(rc, RobotType.SOLDIER, dirToSpawn);
     }
 
     /*

@@ -1,4 +1,4 @@
-package baymax_seven;
+package baymax_seven_old;
 
 import battlecode.common.Clock;
 import battlecode.common.GameActionException;
@@ -33,9 +33,9 @@ public strictfp class RobotPlayer {
                     case WATCHTOWER:
                         break;
                     case BUILDER:
-                        BuilderController.runBuilder(rc); break;
+                        break;
                     case SAGE:
-                        SageController.runSage(rc); break;
+                        break;
                 }
             } catch (GameActionException e) { // We did something illegal
                 System.out.println(rc.getType() + " Exception");
