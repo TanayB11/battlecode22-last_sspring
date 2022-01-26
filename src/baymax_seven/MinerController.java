@@ -7,30 +7,26 @@ import baymax_seven.util.pathfinding.DroidBFS;
 import java.util.Arrays;
 import java.util.Comparator;
 
-import static baymax_seven.util.Communication.minerReport;
-import static baymax_seven.util.Communication.reportEnemy;
+import static baymax_seven.util.Communication.*;
 import static baymax_seven.util.Exploration.minerExploreLoc;
 import static baymax_seven.util.Miscellaneous.directions;
 import static baymax_seven.util.Miscellaneous.retreatFrom;
 
 public class MinerController {
     static MapLocation miningTarget = null, exploreTarget = null;
-    static int[] rubbleCounts = new int[900];
     static BFS bfs = null;
     static int prevHP = 0;
 
     static void runMiner(RobotController rc) throws GameActionException {
         //part 1: prep
         MapLocation me = rc.getLocation();
+        liveMinerReport(rc);
 
         // initialize
         if (bfs == null) {
             bfs = new DroidBFS(rc);
             prevHP = rc.getHealth();
         }
-
-        // add itself to the unit count
-        minerReport(rc);
 
         rc.setIndicatorString((exploreTarget!=null) ? exploreTarget.toString() : "NO EXPLORE TARGET");
 

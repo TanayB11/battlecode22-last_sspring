@@ -26,7 +26,7 @@ public class ArchonController {
 
     // values updated regularly
     static int prevHP = Integer.MIN_VALUE;
-    static final int MIN_MINERS = 3;
+    static final int MIN_MINERS = 4;
 
     // rolling average queue for income
     static int prevTurnLead = 0;
@@ -42,13 +42,11 @@ public class ArchonController {
 
     // regularly resetting comms array goal
     static final int ROUNDS_BEFORE_WIPING_TARGET = 40;
-    static final int SOLDIER_THRESHOLD = 25;
-    static MapLocation prevGoal = null;
     static MapLocation goal = null;
-    static int goalExpiryDate = 0;
 
     public static void runArchon(RobotController rc) throws GameActionException {
         MapLocation me = rc.getLocation();
+        goal = getGoal(rc);
 
         // TODO: 50 turn time limit for transformation
         // FIX TRANSFORMATION on chess
@@ -146,41 +144,107 @@ public class ArchonController {
         */
 
         // Build order
-        int initMinersHeuristic = Math.max(MIN_MINERS, rc.getMapWidth() * rc.getMapHeight() / 375);
+//        int initLabHeuristic = Math.max(MIN_MINERS, rc.getMapWidth() * rc.getMapHeight() / 375);
         boolean spawnedSuccessfully = false;
         Direction randomDir = directions[rng.nextInt(directions.length)];
 
         if (numMiners < MIN_MINERS) {
             initVisibleLeadAndMinersInDir(rc, me);
-            spawnedSuccessfully = spawnMinersToLead(rc, initMinersHeuristic);
-        } else if (bestArchLoc != null && !me.equals(bestArchLoc)) {
-            if (rc.getMode().equals(RobotMode.TURRET)) {
-                if (rc.isTransformReady()) {
-                    rc.transform();
+            if (spawnMinersToLead(rc, MIN_MINERS)) {
+                spawnedSuccessfully = true;
+                minerReport(rc);
+            }
+
+            if (!spawnedSuccessfully) {
+                if (safeBuild(rc, RobotType.MINER, randomDir)) {
+                    spawnedSuccessfully = true;
+                    minerReport(rc);
+                }
+            }
+        } else if (readNumBuilders(rc) == 0 && (rc.getRobotCount() - rc.getArchonCount()) < MIN_MINERS + 1) {
+            if (safeBuild(rc, RobotType.BUILDER, randomDir)) {
+                spawnedSuccessfully = true;
+            }
+        } else if (readNumLabs(rc) > 0) {
+            if (smartSpawnAtkUnit(rc, me, RobotType.SAGE)) {
+                rc.setIndicatorString("SPAWN A SAGE");
+                spawnedSuccessfully = true;
+            } else if (numMiners < 3.5 * MIN_MINERS) {
+                rc.setIndicatorString("NOT ENOUGH MINRES SPAWNING MINER YAY");
+                if (numMiners % rc.getArchonCount() == (archIndex % rc.getArchonCount())) {
+                    if(safeBuild(rc, RobotType.MINER, randomDir)){
+                        minerReport(rc);
+                        spawnedSuccessfully = true;
+                    }
+                }
+            } else if (liveNumMiners(rc) < 3 * MIN_MINERS) {
+                rc.setIndicatorString("NOT ENOUGH MINRES SPAWNING MINER YAY");
+                if (numMiners % rc.getArchonCount() == (archIndex % rc.getArchonCount())) {
+                    if(safeBuild(rc, RobotType.MINER, randomDir)){
+                        minerReport(rc);
+                        spawnedSuccessfully = true;
+                    }
+                }
+            } else if (numSoldiers < MIN_MINERS) {
+                rc.setIndicatorString("NOT ENOUGH SOLDIERS");
+                if (smartSpawnAtkUnit(rc, me, RobotType.SOLDIER)) {
+                    soldierReport(rc);
+                    spawnedSuccessfully = true;
+                }
+            } else if (rc.getMapWidth() > 32 && rc.getMapHeight() > 32) {
+                if (readNumLabs(rc) > ((numSoldiers - 3) / 13)+1) {
+                    rc.setIndicatorString("PLENTY OF LABS");
+                    if (numMiners < numSoldiers) {
+                        if (numMiners % rc.getArchonCount() == (archIndex % rc.getArchonCount())) {
+                            if(safeBuild(rc, RobotType.MINER, randomDir)){
+                                minerReport(rc);
+                                spawnedSuccessfully = true;
+                            }
+                        }
+                    } else {
+                        rc.setIndicatorString("SOLDIER IG");
+                        if (smartSpawnAtkUnit(rc, me, RobotType.SOLDIER)) {
+                            soldierReport(rc);
+                            spawnedSuccessfully = true;
+                        }
+                    }
                 }
             } else {
-                bfs.move(bestArchLoc);
-            }
-        } else if (readNumBuilders(rc) == 0 && (rc.getRobotCount() - rc.getArchonCount()) < 5) {
-            spawnedSuccessfully = safeBuild(rc, RobotType.BUILDER, directions[rng.nextInt(directions.length)]);
-        } else if (readNumLabs(rc) > 0) {
-            if (rc.canBuildRobot(RobotType.SAGE, randomDir)) {
-                spawnedSuccessfully = smartSpawnAtkUnit(rc, me, RobotType.SAGE);
-            } else { // TODO: tweak
-                if ((numMiners < 2.5 * initMinersHeuristic) && (rc.getRoundNum() % 5 == 1 || rc.getRoundNum() % 5 == 2)) {
-                    spawnedSuccessfully = safeBuild(rc, RobotType.MINER, randomDir);
-                } else {
-                    spawnedSuccessfully = smartSpawnAtkUnit(rc, me, RobotType.SOLDIER);
+                if (readNumLabs(rc) > ((numSoldiers - 3) / 26)+1) {
+                    rc.setIndicatorString("PLENTY OF LABS");
+                    if (numMiners < numSoldiers) {
+                        if (numMiners % rc.getArchonCount() == (archIndex % rc.getArchonCount())) {
+                            if(safeBuild(rc, RobotType.MINER, randomDir)){
+                                minerReport(rc);
+                                spawnedSuccessfully = true;
+                            }
+                        }
+                    } else {
+                        rc.setIndicatorString("SOLDIER IG");
+                        if (smartSpawnAtkUnit(rc, me, RobotType.SOLDIER)) {
+                            soldierReport(rc);
+                            spawnedSuccessfully = true;
+                        }
+                    }
                 }
             }
         }
 
-        // old build order (not optimized for sages/builders/labs
-//        if (numMiners < initMinersHeuristic) {
+
+//        if (numMiners < initLabHeuristic) {
 //            initVisibleLeadAndMinersInDir(rc, me);
-//            spawnedSuccessfully = spawnMinersToLead(rc, initMinersHeuristic);
-//        } else if (numSoldiers < initMinersHeuristic) {
-//            smartSpawnAtkUnit(rc, me, RobotType.SOLDIER);
+//            spawnedSuccessfully = spawnMinersToLead(rc, initLabHeuristic);
+//            if (!spawnedSuccessfully) {
+//                if (safeBuild(rc, RobotType.MINER, randomDir)) {
+//                    spawnedSuccessfully = true;
+//                }
+//            }
+//        } else if (smartSpawnAtkUnit(rc, me, RobotType.SAGE)) {
+//            spawnedSuccessfully = true;
+//        } else if (readNumBuilders(rc) == 0 && (rc.getRobotCount() - rc.getArchonCount()) < numMiners + 1) {
+//            if (safeBuild(rc, RobotType.BUILDER, randomDir)) {
+//                spawnedSuccessfully = true;
+//            }
 //        } else if (bestArchLoc != null && !me.equals(bestArchLoc)) {
 //            if (rc.getMode().equals(RobotMode.TURRET)) {
 //                if (rc.isTransformReady()) {
@@ -189,21 +253,15 @@ public class ArchonController {
 //            } else {
 //                bfs.move(bestArchLoc);
 //            }
-//        } else if (readNumBuilders(rc) == 0 && (rc.getRobotCount() - rc.getArchonCount()) < initMinersHeuristic + 1) { // spawn a singular builder
-//            safeBuild(rc, RobotType.BUILDER, directions[rng.nextInt(directions.length)]);
-//        } else if (rc.canBuildRobot(RobotType.SAGE, randomDir)) { // if we can spawn a sage, spawn a sage
-//            rc.buildRobot(RobotType.SAGE, randomDir);
-//        } else if (readNumLabs(rc) > 0 && numSoldiers < SOLDIER_THRESHOLD) {
-//            if (rc.getRoundNum() % 3 != 2) {
-//                spawnedSuccessfully = smartSpawnAtkUnit(rc, me, RobotType.SOLDIER);
+//        } else if (readNumLabs(rc) > ((double) rc.getRoundNum() / 2000) * initLabHeuristic) {
+//            if (numMiners < numSoldiers) {
+//                if (numMiners % rc.getArchonCount() == (archIndex % rc.getArchonCount()) && safeBuild(rc, RobotType.MINER, randomDir)) {
+//                    spawnedSuccessfully = true;
+//                }
 //            } else {
-//                spawnedSuccessfully = spawnMinersToLead(rc, 1);
-//            }
-//        } else if (readNumLabs(rc) > 0){ // save lead until our one lab is built
-//            if (rc.getRoundNum() % 4 != 3) {
-//                spawnedSuccessfully = smartSpawnAtkUnit(rc, me, RobotType.SOLDIER);
-//            } else {
-//                spawnedSuccessfully = spawnMinersToLead(rc, 1);
+//                if (smartSpawnAtkUnit(rc, me, RobotType.SOLDIER)) {
+//                    spawnedSuccessfully = true;
+//                }
 //            }
 //        }
 
@@ -220,11 +278,9 @@ public class ArchonController {
 
         if (isAlpha) {
             clearIndex(rc, ARCHON_COUNT_INDEX);
-            clearIndex(rc, MINER_COUNT_INDEX);
-            clearIndex(rc, SOLDIER_COUNT_INDEX);
             clearIndex(rc, BUILDER_COUNT_INDEX);
-            clearIndex(rc, LAB_COUNT_INDEX);
             clearIndex(rc, SAGE_COUNT_INDEX);
+            clearIndex(rc, ALIVE_MINER_COUNT);
 
             // Update income tracker queue
             int income = rc.getTeamLeadAmount(rc.getTeam()) - prevTurnLead;
@@ -248,7 +304,8 @@ public class ArchonController {
     }
 
     private static boolean smartSpawnAtkUnit(RobotController rc, MapLocation me, RobotType type) throws GameActionException {
-        int teamLead = rc.getTeamLeadAmount(rc.getTeam());
+        rc.setIndicatorString("SPAWNING A THINGY AT " + type.toString());
+        int teamResource = (type.equals(RobotType.SAGE)) ? rc.getTeamGoldAmount(rc.getTeam()) : rc.getTeamLeadAmount(rc.getTeam());
 
         int cost = (type.equals(RobotType.SAGE)) ? type.buildCostGold : type.buildCostLead;
 
@@ -270,12 +327,12 @@ public class ArchonController {
         }));
 
         Direction dirToSpawn = goal != null ? me.directionTo(goal) : directions[rng.nextInt(directions.length)];
-        if (teamLead < 2 * cost) {
+        if (teamResource < 2 * cost) {
             // spawn 1 unit from closest arch
             if (archs[0].equals(me)) {
                 return safeBuild(rc, type, dirToSpawn);
             }
-        } else if (teamLead < 3 * cost) {
+        } else if (teamResource < 3 * cost) {
             // spawn 2 units from 2 closest archs
             if (
                     (archs[0] != null && archs[0].equals(me)) ||
@@ -283,7 +340,7 @@ public class ArchonController {
             ) {
                 return safeBuild(rc, type, dirToSpawn);
             }
-        } else if (teamLead < 4 * cost) {
+        } else if (teamResource < 4 * cost) {
             // spawn 3 units from 3 closest archs
             if (
                     (archs[0] != null && archs[0].equals(me)) ||
@@ -356,8 +413,9 @@ public class ArchonController {
 
             for (int i = nearbyAllies.length - 1; i > 0; i--) {
                 if (
-                        nearbyAllies[i].getType().equals(RobotType.SOLDIER) &&
-                                nearbyAllies[i].getHealth() < .92*RobotType.SOLDIER.health
+                        (nearbyAllies[i].getType().equals(RobotType.SOLDIER) &&
+                                nearbyAllies[i].getHealth() < .92*RobotType.SOLDIER.health) || (nearbyAllies[i].getType().equals(RobotType.SAGE) &&
+                                nearbyAllies[i].getHealth() < .91*RobotType.SAGE.health)
                 ) {
                     rc.setIndicatorString("Hello, I'm Baymax, your personal healthcare companion!");
                     if (rc.canRepair(nearbyAllies[i].getLocation())) {

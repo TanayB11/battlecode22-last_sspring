@@ -16,6 +16,7 @@ public class Communication {
     // 7-10 are for the other units
     public final static int FLAG_INDEX = 11;
     public final static int TARGET_ENEMY_INDEX = 12;
+    public final static int ALIVE_MINER_COUNT = 20;
 
     /*
     Section 1: Archons
@@ -67,6 +68,14 @@ public class Communication {
 
     public static int readNumMiners(RobotController rc) throws GameActionException {
         return rc.readSharedArray(MINER_COUNT_INDEX);
+    }
+
+    public static void liveMinerReport(RobotController rc) throws GameActionException {
+        rc.writeSharedArray(ALIVE_MINER_COUNT, rc.readSharedArray(ALIVE_MINER_COUNT) + 1);
+    }
+
+    public static int liveNumMiners(RobotController rc) throws GameActionException {
+        return rc.readSharedArray(ALIVE_MINER_COUNT);
     }
 
     /*

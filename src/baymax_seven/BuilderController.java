@@ -8,18 +8,21 @@ import java.util.Arrays;
 import java.util.Comparator;
 
 import static baymax_seven.MinerController.isAttackingEnemy;
-import static baymax_seven.util.Communication.builderReport;
-import static baymax_seven.util.Communication.reportEnemy;
+import static baymax_seven.util.Communication.*;
 import static baymax_seven.util.Miscellaneous.directions;
 import static baymax_seven.util.Miscellaneous.rng;
 
 public class BuilderController {
     static BFS bfs = null;
-    static MapLocation babyLocation = null;
     static MapLocation closestWall = null;
+    static MapLocation bestBuildLoc = null;
+    static MapLocation[] babyLocs = { null, null, null, null, null, null, null, null };
+    static boolean canMove = true;
+    static boolean isHealing = false;
+
+    static final int RUBBLE_THRESHOLD_TO_BUILD_LAB = 25;
 
     static void runBuilder(RobotController rc) throws GameActionException {
-        // i am here, mates :)
         MapLocation me = rc.getLocation();
 
         // initialize
@@ -35,43 +38,110 @@ public class BuilderController {
 
         //report nearby enemies to shared array (from v5)
         RobotInfo[] nearbyEnemies = rc.senseNearbyRobots(-1, rc.getTeam().opponent());
-        RobotInfo retreatFromEnemy = null; // nearest dangerous enemy (defaults to null)
 
         if (nearbyEnemies.length > 0) {
             Arrays.sort(nearbyEnemies, Comparator.comparingInt(a -> me.distanceSquaredTo(a.getLocation())));
             for (int i = 0; i < nearbyEnemies.length; i++) {
                 reportEnemy(rc, nearbyEnemies[i].getType(), nearbyEnemies[i].getLocation());
-                if (isAttackingEnemy(nearbyEnemies[i])) {
-                    retreatFromEnemy = nearbyEnemies[i];
-                    break;
-                }
             }
         }
 
         /*
         Builder micro strategy
         */
-        if (!me.equals(closestWall)) {
-            rc.setIndicatorString("moving to closest wall :)");
-            bfs.move(closestWall);
-        } else {
-            Direction buildDir = directions[rng.nextInt(directions.length)];
+
+        // Outline
+        // Pick the archons closest to any wall to spawn builders
+        // BFS to the closest wall
+            // When we can see the wall, find the lowest rubble square closest to the wall to spawn a lab at
+        // Make sure that we track the lab's ID so we can track it even when it moves
+
+        RobotInfo[] nearbyAllies = rc.senseNearbyRobots(rc.getType().actionRadiusSquared, rc.getTeam());
+        // try to heal all nearby allies first, start with the highest health
+        for (int i = 0; i < babyLocs.length; i++) {
+            if (babyLocs[i] != null) {
+                if (me.isAdjacentTo(babyLocs[i]) && rc.canSenseRobotAtLocation(babyLocs[i])) {
+                    if (rc.canRepair(babyLocs[i])) {
+                        rc.repair(babyLocs[i]);
+                        isHealing = true;
+                        canMove = false;
+                    }
+                }
+                if (rc.canSenseRobotAtLocation(babyLocs[i]) && rc.senseRobotAtLocation(babyLocs[i]).getHealth() == rc.senseRobotAtLocation(babyLocs[i]).getType().getMaxHealth(rc.senseRobotAtLocation(babyLocs[i]).getLevel())) {
+                    babyLocs[i] = null;
+                    canMove = true;
+                    isHealing = false;
+                }
+            }
+        }
+
+//        if (nearbyAllies.length > 0) {
+//            Arrays.sort(nearbyAllies, Comparator.comparingInt(a -> a.getHealth()));
+//            for (int i = nearbyAllies.length - 1; i > 0; i--) {
+//                if (nearbyAllies[i].getType().equals(RobotType.LABORATORY) || nearbyAllies[i].getType().equals(RobotType.ARCHON)) {
+//                    if (rc.canRepair(nearbyAllies[i].getLocation())) {
+//                        if (nearbyAllies[i].getHealth() < nearbyAllies[i].getType().getMaxHealth(rc.getLevel())) {
+//                            rc.repair(nearbyAllies[i].getLocation());
+//                        }
+//                    }
+//                }
+//            }
+//        }
+
+        if (!isHealing) {
+            // determine a low rubble location at which to build a lab
+            if (bestBuildLoc == null && me.distanceSquaredTo(closestWall) < 4) {
+                MapLocation[] buildLocs = rc.getAllLocationsWithinRadiusSquared(me, RobotType.BUILDER.visionRadiusSquared);
+                Arrays.sort(buildLocs, Comparator.comparingInt(loc -> {
+                    try {
+                        return loc.distanceSquaredTo(closestWall);
+                    } catch (Exception e) {
+                        return Integer.MAX_VALUE;
+                    }
+                }));
+
+                int bestRubble = Integer.MAX_VALUE;
+                for (int i = 0; i < buildLocs.length; i++) {
+                    if (!rc.isLocationOccupied(buildLocs[i]) && rc.senseRubble(buildLocs[i]) < bestRubble) {
+                        bestBuildLoc = buildLocs[i];
+                        bestRubble = rc.senseRubble(buildLocs[i]);
+                        if (rc.senseRubble(buildLocs[i]) < RUBBLE_THRESHOLD_TO_BUILD_LAB) {
+                            bestBuildLoc = buildLocs[i];
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+
+        // if we're adjacent to the goal, build a lab and repair it
+        if (bestBuildLoc != null && me.isAdjacentTo(bestBuildLoc)) {
+            // build on the min rubble location
+            Direction buildDir = me.directionTo(bestBuildLoc);
+            rc.setIndicatorString(bestBuildLoc.toString());
             if (rc.canBuildRobot(RobotType.LABORATORY, buildDir)) {
-                rc.setIndicatorString("building a lab :)");
                 rc.buildRobot(RobotType.LABORATORY, buildDir);
-                babyLocation = rc.adjacentLocation(buildDir);
+                canMove = false;
+                labReport(rc);
+                for (int i = 0; i < babyLocs.length; i++) {
+                    if (babyLocs[i] == null) {
+                        babyLocs[i] = bestBuildLoc;
+                    }
+                }
+                bestBuildLoc = null;
+            }
+        } else {
+//            bfs.move(closestWall) ;
+            if (canMove) {
+                bfs.move((bestBuildLoc != null && !me.isAdjacentTo(bestBuildLoc)) ? bestBuildLoc : closestWall);
             }
         }
 
-        if (babyLocation != null && rc.canSenseRobotAtLocation(babyLocation) && rc.senseRobotAtLocation(babyLocation).getHealth() < RobotType.LABORATORY.health) {
-            if (rc.canRepair(babyLocation)) {
-                rc.repair(babyLocation);
-            }
+        if (bestBuildLoc != null) {
+            rc.setIndicatorString(bestBuildLoc.toString());
+        } else {
+            rc.setIndicatorString(" WALL " + closestWall.toString());
         }
-
-        // find the nearest wall
-        // TODO: make sure this runs only once
-
     }
 
     private static MapLocation getClosestWall(RobotController rc, MapLocation me) {

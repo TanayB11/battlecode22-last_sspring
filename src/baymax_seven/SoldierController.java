@@ -64,8 +64,6 @@ public class SoldierController {
         Macro strategy implementation
         */
 
-        soldierReport(rc);
-
         // report nearby enemies (macro)
         RobotInfo[] nearbyEnemies = rc.senseNearbyRobots(-1, rc.getTeam().opponent());
         if (nearbyEnemies.length > 0) {

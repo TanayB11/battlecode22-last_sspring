@@ -84,7 +84,7 @@ public class SageController {
 
         // Disintegrate or return to archon for healing
         if (
-                isDying && rc.getHealth() < 0.3 * RobotType.SAGE.health
+                isDying && rc.getHealth() < 0.2 * RobotType.SAGE.health
         ) {
             MapLocation nearestFriendlyArch = getNearestFriendlyArch(rc);
 
@@ -170,7 +170,7 @@ public class SageController {
             // implement move-attack-retreat decision tree
             if (rc.isActionReady()) {
                 if (enemyInRange) {
-                    smartAttack(rc, targetEnemy, nearbyEnemies);
+                    smartAttack(rc, targetEnemy);
                     if (surroundedByAllies){
                         bfs.move(enemyLoc);
                     } else {
@@ -178,7 +178,7 @@ public class SageController {
                     }
                 } else {
                     bfs.move(enemyLoc);
-                    if (rc.canAttack(enemyLoc)) { smartAttack(rc, targetEnemy, nearbyEnemies); }
+                    if (rc.canAttack(enemyLoc)) { smartAttack(rc, targetEnemy); }
                     if (!surroundedByAllies) { retreatFrom(rc, enemyLoc); }
                 }
             } else if (enemyInRange) {
@@ -263,8 +263,9 @@ public class SageController {
         }
         return 0;
     }
-    static void smartAttack(RobotController rc, RobotInfo targetEnemy, RobotInfo[] nearbyEnemies) throws GameActionException {
+    static void smartAttack(RobotController rc, RobotInfo targetEnemy) throws GameActionException {
         RobotType targetType = targetEnemy.getType();
+        RobotInfo[] nearbyEnemies = rc.senseNearbyRobots(RobotType.SAGE.actionRadiusSquared, rc.getTeam().opponent());
         int targetHealth = targetEnemy.getHealth();
         int targetMaxHealth = targetType.getMaxHealth(targetEnemy.getLevel());
         boolean weakEnemyInActionRadius = false;
