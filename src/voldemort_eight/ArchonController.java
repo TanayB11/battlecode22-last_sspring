@@ -153,7 +153,7 @@ public class ArchonController {
                         minerReport(rc);
                     }
                 }
-            } else if (rc.getMapWidth() > 20 && rc.getMapHeight() > 20 && readNumBuilders(rc) == 0 && (rc.getRobotCount() - rc.getArchonCount()) % (MIN_INITIAL_MINERS) == 0) {
+            } else if ((rc.getMapWidth() > 20 || rc.getMapHeight() > 20) && readNumBuilders(rc) == 0 && (rc.getRobotCount() - rc.getArchonCount()) % (MIN_INITIAL_MINERS) == 0) {
                 if (safeBuild(rc, RobotType.BUILDER, randomDir)) {
                     spawnedSuccessfully = true;
                 }
